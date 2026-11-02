@@ -83,7 +83,20 @@ def api_state():
         "running": SCAN["status"] == "running",
     }
     if r:
-        out["counts"] = r.get("counts", {})
+        # v1.1.0：counts 按忽略名单/已隔离过滤后重算，与 /api/results 清单口径一致
+        # （原始计数只作 raw_counts 保留，避免"计数 13 但清单 0"的困惑）
+        ig = _ignored_set()
+        quarantined = _quarantined_set()
+        counts = {"high": 0, "medium": 0, "low": 0, "info": 0}
+        for f in r.get("findings", []):
+            p = f.get("path", "")
+            if p in ig and p not in quarantined:
+                continue
+            lv = f.get("level")
+            if lv in counts:
+                counts[lv] += 1
+        out["counts"] = counts
+        out["raw_counts"] = r.get("counts", {})
         out["duration"] = r.get("duration")
         out["errors"] = r.get("errors", [])
         out["done_scanned"] = r.get("scanned")
