@@ -111,7 +111,34 @@ SKIP_DIR_NAMES = {
     "node_modules", ".git", ".svn", "__pycache__", ".venv", "venv",
     ".idea", ".vscode", ".cache", ".npm", ".nuget", ".gradle", ".m2",
     "anaconda3", "miniconda3", "site-packages", "__macosx",
+    # v1.1.0：补充 Python 发行版/包缓存（不带版本号命名）与常见缓存目录
+    "anaconda", "anaconda2", "miniconda", "miniforge", "mambaforge", "pkgs",
+    "conda-meta", ".conda", "dist-info", "__pypackages__",
 }
+
+# v1.1.0：默认忽略的扩展名——纯二进制/安装包/字体/字节码，对"按内容找回文档"零价值，
+# 收录只会膨胀索引（实测 .dll×7千+.enc×6千+.pyi×6千 占数万条）。不收录文件名也不记。
+DEFAULT_IGNORE_EXTS = {
+    # 可执行/库/构建产物
+    ".exe", ".dll", ".sys", ".drv", ".efi", ".so", ".dylib", ".lib", ".a",
+    ".o", ".obj", ".pyd", ".pdb", ".bin",
+    # 安装包/磁盘镜像
+    ".msi", ".msix", ".appx", ".appxbundle", ".cab", ".wim", ".iso",
+    ".img", ".dmg", ".vhd", ".vdi",
+    # 压缩包
+    ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".zst", ".jar",
+    ".war", ".apk", ".ipa", ".whl", ".egg", ".nupkg",
+    # 字体
+    ".ttf", ".otf", ".woff", ".woff2", ".eot",
+    # 加密/缓存/字节码/类型存根（IDE 自带 typeshed 数以千计）
+    ".enc", ".pyc", ".pyo", ".pyi", ".class", ".dek", ".dat",
+}
+
+# 运行时生效的忽略集合（DEFAULT + config.json 里用户自定义追加），resolve_roots 时合并
+_active_skip_dirs = set(SKIP_DIR_NAMES)
+_active_ignore_exts = set(DEFAULT_IGNORE_EXTS)
+# 本次扫描被扩展名规则跳过的文件计数（仅日志展示用）
+_ignored_file_count = 0
 
 
 def log(msg):
@@ -151,21 +178,40 @@ def default_roots():
     return [str(p) for p in candidates if p.exists()]
 
 
+def _norm_ext(e):
+    """把用户写的扩展名归一为带点小写（"dll"→".dll"）。"""
+    e = e.strip().lower()
+    return e if e.startswith(".") else "." + e
+
+
 def resolve_roots(roots_arg):
-    """解析扫描范围：优先命令行参数，其次已有配置，最后自动探测并持久化。"""
+    """解析扫描范围：优先命令行参数，其次已有配置，最后自动探测并持久化。
+    v1.1.0：同时读取 config.json 的 ignore_dirs / ignore_exts（用户自定义追加，
+    与内置忽略集合合并生效），写回时保留这两个字段。"""
+    cfg = {}
+    if CONFIG_PATH.exists():
+        try:
+            cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            cfg = {}
     if roots_arg:
         roots = [s.strip() for s in re.split(r"[;；]", roots_arg) if s.strip()]
-    elif CONFIG_PATH.exists():
-        try:
-            roots = json.loads(CONFIG_PATH.read_text(encoding="utf-8")).get("roots", [])
-        except Exception:
-            roots = []
     else:
-        roots = []
+        roots = cfg.get("roots", [])
     if not roots:
         roots = default_roots()
+    # 合并用户自定义忽略项（大小写不敏感）
+    for d in cfg.get("ignore_dirs", []):
+        _active_skip_dirs.add(str(d).lower())
+    for e in cfg.get("ignore_exts", []):
+        _active_ignore_exts.add(_norm_ext(str(e)))
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    CONFIG_PATH.write_text(json.dumps({"roots": roots}, ensure_ascii=False, indent=2),
+    out = {"roots": roots}
+    if cfg.get("ignore_dirs"):
+        out["ignore_dirs"] = cfg["ignore_dirs"]
+    if cfg.get("ignore_exts"):
+        out["ignore_exts"] = cfg["ignore_exts"]
+    CONFIG_PATH.write_text(json.dumps(out, ensure_ascii=False, indent=2),
                            encoding="utf-8")
     return roots
 
@@ -339,10 +385,16 @@ def init_db(conn):
 
 def skip_dir(name):
     n = name.lower()
-    return n in SKIP_DIR_NAMES or n.startswith(".")
+    return n in _active_skip_dirs or n.startswith(".")
+
+
+def skip_file(fp):
+    """v1.1.0：按扩展名忽略纯二进制文件（dll/安装包/字体等，无文本价值）。"""
+    return fp.suffix.lower() in _active_ignore_exts
 
 
 def iter_files(root):
+    global _ignored_file_count
     rp = Path(root)
     if not rp.exists():
         return
@@ -352,7 +404,11 @@ def iter_files(root):
     for dirpath, dirnames, filenames in os.walk(rp):
         dirnames[:] = [d for d in dirnames if not skip_dir(d)]
         for fn in filenames:
-            yield Path(dirpath) / fn
+            fp = Path(dirpath) / fn
+            if skip_file(fp):
+                _ignored_file_count += 1
+                continue
+            yield fp
 
 
 def fmt_size(n):
@@ -520,6 +576,8 @@ def cmd_scan(args):
     log(f"  本次扫描 {stats['scanned']} 个文件：新增 {stats['added']}，更新 {stats['updated']}，"
         f"未变化跳过 {stats['skipped']}")
     log(f"  其中已提取正文 {stats['scanned'] - stats['name_only']} 个，仅记文件名 {stats['name_only']} 个")
+    if _ignored_file_count:
+        log(f"  按忽略规则跳过二进制/依赖文件 {_ignored_file_count} 个（不收录）")
     if removed:
         log(f"  清理已不存在/移出范围的记录 {removed} 条")
     if report_path:
@@ -565,6 +623,21 @@ def _print_status():
         log(f"上次扫描：{last_scan[0]}")
     if roots_row:
         log("扫描范围：" + " ; ".join(json.loads(roots_row[0])))
+    # v1.1.0：显示生效的忽略规则（先读 config 合并，与 scan 保持一致）
+    cfg = {}
+    if CONFIG_PATH.exists():
+        try:
+            cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    for d in cfg.get("ignore_dirs", []):
+        _active_skip_dirs.add(str(d).lower())
+    for e in cfg.get("ignore_exts", []):
+        _active_ignore_exts.add(_norm_ext(str(e)))
+    custom_dirs = len(_active_skip_dirs) - len(SKIP_DIR_NAMES)
+    custom_exts = len(_active_ignore_exts) - len(DEFAULT_IGNORE_EXTS)
+    log(f"忽略规则：目录 {len(_active_skip_dirs)} 类（含自定义 {custom_dirs}），"
+        f"扩展名 {len(_active_ignore_exts)} 类（含自定义 {custom_exts}）—— 二进制/依赖库不收录")
     log("文件类型分布（前12）：" + ", ".join(f"{e or '(无扩展名)'}×{c}" for e, c in by_type))
     conn.close()
     return 0
