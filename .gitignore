@@ -1,0 +1,14 @@
+# 运行时数据（索引、扫描记录、积分、快照）——包含个人文件信息，严禁提交
+scripts/data/
+**/scripts/data/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# D 盘副本共享数据目录链接文件（本机专用机制，发布不需要）
+scripts/data_dir.txt
+
+# 日志与数据库
+*.log
+*.db
