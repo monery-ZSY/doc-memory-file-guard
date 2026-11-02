@@ -8,7 +8,7 @@
 - 检索历史：每次搜索自动记录（去重、最近 50 条），「检索历史」标签页一键重搜，
   防止意外关闭后丢失搜索上下文
 - 首次使用引导：检测到未建索引时弹出授权确认，经用户同意才开始全盘扫描识别
-- 宠物文件管理：拖拽结果卡片喂宠物 = 移入肚子暂存（上限 99 个，24 小时后彻底删除），
+ - 宠物文件管理：拖拽结果卡片喂宠物 = 移入肚子暂存（上限 99 个，到期转入系统回收站可还原），
   双击宠物肚子把文件吐回原位（抛物线恢复动画）
 - 界面宠物小助手：进页面打招呼、搜索时思考、找到开心、没找到安慰
 - 每日快照查看、一键增量更新索引
@@ -913,26 +913,7 @@ svg.ic{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;
 .cbtn.ai:hover{background:#eef3fb;color:#2f5da0}
 .cbtn.sim{border-color:#c3d9c9;color:#3f8a63}
 .cbtn.sim:hover{background:#eef7f1;color:#2e7d4f}
-/* ===== 反馈模块 ===== */
-.corner-entry{position:fixed;left:22px;bottom:132px;z-index:60;width:92px;height:96px;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-  cursor:pointer;user-select:none}
-.sign-entry{bottom:246px}
-.corner-entry .ce-ic{width:58px;height:58px;border-radius:16px;background:rgba(255,255,255,.9);
-  backdrop-filter:blur(8px);border:1.5px solid var(--pri-b);display:flex;align-items:center;
-  justify-content:center;box-shadow:0 4px 18px rgba(23,58,94,.12);transition:.18s;position:relative}
-.corner-entry svg.cei{width:28px;height:28px;stroke:#5a7fa3;stroke-width:1.8;fill:none;
-  stroke-linecap:round;stroke-linejoin:round;transition:.18s}
-.corner-entry:hover .ce-ic{transform:translateY(-2px);box-shadow:0 6px 22px rgba(23,58,94,.18)}
-.corner-entry:hover svg.cei{stroke:var(--pri)}
-.corner-entry .ce-cap{font-size:10.5px;color:var(--sub);margin-top:6px;text-align:center;
-  line-height:1.4;background:rgba(255,255,255,.85);padding:2px 8px;border-radius:8px}
-.corner-entry .ce-badge{position:absolute;right:-6px;top:-6px;min-width:20px;height:20px;border-radius:10px;
-  background:linear-gradient(135deg,#f0a04b,#f5c04b);color:#fff;font-size:11px;font-weight:700;
-  display:none;align-items:center;justify-content:center;padding:0 6px;border:2px solid #fff;
-  box-shadow:0 3px 10px rgba(240,160,75,.5)}
-.corner-entry .ce-badge.show{display:inline-flex}
-.corner-entry .ce-badge.pts{background:linear-gradient(135deg,#3a9a5f,#6fcf97);box-shadow:0 3px 10px rgba(58,154,95,.45)}
+/* ===== 反馈模块（v1.2.0：角落入口已并入「设置」分区，样式清理） ===== */
 
 .fb-mask{display:none;position:fixed;inset:0;background:rgba(23,58,94,.4);backdrop-filter:blur(4px);
   z-index:210;align-items:center;justify-content:center}
@@ -1338,39 +1319,6 @@ mark{background:#fff3cd;color:#b8860b;padding:0 3px;border-radius:3px;font-weigh
 .fb-feed:disabled{opacity:.45;cursor:not-allowed}
 .own-tag{font-size:10.5px;color:var(--pri);background:var(--pri-l);border-radius:7px;
   padding:1px 7px;margin-left:5px;display:inline-block}
-/* 拓展面板 */
-.ext-grid{display:grid;grid-template-columns:1fr;gap:10px}
-.ext-card{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:13px;
-  padding:13px 15px;background:#fff;cursor:pointer;transition:.15s}
-.ext-card:hover{border-color:var(--pri-b);box-shadow:0 4px 16px rgba(36,86,140,.12);transform:translateY(-1px)}
-.ext-card .xi{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:flex;
-  align-items:center;justify-content:center}
-.ext-card .xi svg{width:24px;height:24px;stroke:#fff;stroke-width:1.8;fill:none;
-  stroke-linecap:round;stroke-linejoin:round}
-.ext-card .xt b{display:block;font-size:13.5px;color:var(--txt)}
-.ext-card .xt span{font-size:11px;color:var(--sub);line-height:1.5}
-.xi-blue{background:linear-gradient(135deg,var(--pri-deep),var(--pri))}
-.xi-orange{background:linear-gradient(135deg,#c9852e,#f0a04b)}
-.xi-green{background:linear-gradient(135deg,#2e7d4f,#5cb882)}
-
-/* ===== 文件卫士内嵌窗口 ===== */
-.fg-mask{display:none;position:fixed;inset:0;background:rgba(23,58,94,.45);backdrop-filter:blur(5px);
-  z-index:230;align-items:center;justify-content:center}
-.fg-mask.show{display:flex}
-.fg-win{width:92%;height:88%;background:#fff;border-radius:16px;overflow:hidden;
-  box-shadow:0 18px 60px rgba(23,58,94,.35);display:flex;flex-direction:column}
-.fg-top{display:flex;align-items:center;gap:9px;padding:11px 18px;
-  background:linear-gradient(120deg,#0e2a47,#173a5e 55%,#2f6da8);color:#fff;flex-shrink:0}
-.fg-top svg{width:17px;height:17px;stroke:#fff;stroke-width:1.8;fill:none;
-  stroke-linecap:round;stroke-linejoin:round}
-.fg-top b{font-size:14px;letter-spacing:.5px}
-.fg-top .fg-sub{font-size:10.5px;opacity:.75;margin-left:2px}
-.fg-close{margin-left:auto;border:none;border-radius:9px;padding:6px 15px;font-size:12px;
-  font-weight:600;cursor:pointer;color:#173a5e;background:rgba(255,255,255,.92);transition:.15s}
-.fg-close:hover{background:#fff}
-.fg-frame{flex:1;border:none;width:100%;background:#f4f8fc}
-.fg-tip{padding:8px 18px;font-size:11px;color:var(--sub);background:var(--pri-l);
-  border-top:1px solid var(--line);flex-shrink:0}
 
 /* ===== 弹窗 ===== */
 .mask{display:none;position:fixed;inset:0;background:rgba(23,58,94,.4);backdrop-filter:blur(4px);
@@ -1429,8 +1377,61 @@ mark{background:#fff3cd;color:#b8860b;padding:0 3px;border-radius:3px;font-weigh
 .auth-banner .ab-x:hover{background:rgba(240,160,75,.15)}
 
 footer{max-width:1000px;margin:0 auto;padding:16px 24px 30px;color:var(--sub);font-size:11px;
-  line-height:1.9;border-top:1px solid var(--line)}
+line-height:1.9;border-top:1px solid var(--line)}
 footer code{background:#fff;border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+
+/* ===== v1.2.0 · 检索第一优先级：最近搜索胶囊 / 批量回收条 / 设置页 / 空态诊断 ===== */
+.recentbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:12px 0 0}
+.rb-t{font-size:12px;color:var(--sub)}
+.rb-chip{font-size:12px;color:#2f6da8;background:#eef6fe;border:1px solid #d3e5f5;border-radius:20px;
+padding:3px 11px;cursor:pointer;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rb-chip:hover{background:#e0effc;border-color:#b9d9f2}
+.rb-all{margin-left:auto;font-size:12px;color:var(--pri);cursor:pointer;font-weight:600}
+.rb-all:hover{text-decoration:underline}
+
+.selbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;padding:8px 13px;
+background:#eef6fe;border:1px solid #cfe3f5;border-radius:11px;font-size:12.5px}
+.selbar input[type=checkbox]{accent-color:var(--pri);width:14px;height:14px;cursor:pointer}
+.sb-all{display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:#2f5d8a}
+.sb-info{color:#2f5d8a}
+.sb-go{margin-left:auto;background:linear-gradient(135deg,#e08a4b,#d0713a);color:#fff;border:none;border-radius:8px;
+padding:5px 14px;font-size:12.5px;cursor:pointer;font-weight:600}
+.sb-go:hover{filter:brightness(1.06)}
+.sb-tip{color:var(--sub);font-size:11.5px}
+
+.result .ck{display:inline-flex;align-items:center;margin-right:2px;vertical-align:-2px}
+.result .ck input{accent-color:var(--pri);width:15px;height:15px;cursor:pointer}
+.result.sel-on{outline:2px solid #a9cdf0;outline-offset:-2px;border-radius:12px}
+
+.empty .e-title{font-size:15px;font-weight:700;color:#2f5d8a;margin:6px 0 12px}
+.empty .e-tips{display:flex;flex-direction:column;gap:8px;text-align:left;max-width:640px;margin:0 auto}
+.empty .e-tip{font-size:12.5px;color:#4a6b8f;background:#f4f9fe;border:1px solid #ddebf7;border-radius:9px;
+padding:8px 12px;line-height:1.7}
+.empty .e-tip a{color:var(--pri);font-weight:700;text-decoration:none;border-bottom:1px dashed var(--pri)}
+.empty .e-tip a:hover{border-bottom-style:solid}
+.empty .e-more{margin-top:12px;font-size:12px}
+.empty .e-more a{color:var(--pri);text-decoration:none}
+.empty .e-more a:hover{text-decoration:underline}
+
+.hist-scroll{max-height:52vh;overflow-y:auto;border:1px solid var(--line);border-radius:10px;
+background:#fff;padding:6px 10px;margin-top:8px}
+.rc-list{max-height:190px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;background:#fff;
+padding:8px 12px;margin-top:10px;font-size:12.5px;color:#4a6b8f;line-height:1.9;text-align:left}
+.rc-note{margin-top:10px;font-size:12px;color:#2f7a4f;background:#f0faf4;border:1px solid #cfe9d8;
+border-radius:8px;padding:7px 11px;text-align:left}
+
+.bd-list{display:flex;flex-direction:column;gap:7px;margin-top:10px;text-align:left}
+.bd-row{display:flex;gap:10px;font-size:12.5px;line-height:1.7;align-items:baseline}
+.bd-row b{flex:0 0 92px;color:#2f5d8a;font-size:12px}
+.bd-row span{color:#4a6b8f}
+.set-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.set-btn{font-size:13px;background:#fff;border:1px solid var(--pri);color:var(--pri);border-radius:9px;
+padding:8px 16px;cursor:pointer;font-weight:600}
+.set-btn:hover{background:#eef6fe}
+.set-btn.fg-btn{border-color:#2f7a4f;color:#2f7a4f}
+.set-btn.fg-btn:hover{background:#f0faf4}
+.snapbar{display:flex;align-items:center;gap:10px;margin-top:8px}
+.snapbar select{border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:12.5px}
 </style>
 </head>
 <body>
@@ -1502,41 +1503,52 @@ footer code{background:#fff;border:1px solid var(--line);border-radius:4px;paddi
       <input type="text" id="fDir" placeholder="路径包含…" style="width:105px" onkeydown="if(event.key==='Enter')filterChanged()" onfocus="this.dataset.prev=this.value" onblur="if(this.dataset.prev!==undefined&&this.dataset.prev!==this.value)filterChanged()">
       <select id="fLimit" onchange="filterChanged()"><option>20</option><option selected>50</option><option>100</option></select>
       <div class="draghint"><svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>
-        删除文件：把结果卡片拖到右下角宠物身上，它会吃掉并暂存 24 小时（最多 99 个）；<b>双击宠物肚子</b>可吐出恢复。</div>
+        删除文件：<b>勾选结果卡片 → 移入回收站</b>（送系统回收站，随时可还原）；也可把卡片拖给宠物暂存 24 小时，到期自动转入回收站</div>
     </div>
   </div>
 
   <div class="tabs">
-    <span id="tabSearch" class="on" onclick="setTab('search')">检索结果</span>
-    <span id="tabHistory" onclick="setTab('history')">检索历史<span class="badge-mini" id="histBadge" style="display:none">0</span></span>
-    <span id="tabSnap" onclick="setTab('snap')">每日快照</span>
-    <span id="tabStats" onclick="setTab('stats')">数据库</span>
+    <span id="tabSearch" class="on" onclick="setTab('search')">检索</span>
+    <span id="tabLib" onclick="setTab('lib')">资料库</span>
+    <span id="tabDiscover" onclick="setTab('discover')">发现</span>
+    <span id="tabSettings" onclick="setTab('settings')">设置</span>
   </div>
 
   <div id="paneSearch">
+    <div class="recentbar" id="recentbar" style="display:none"></div>
     <div id="resultHead" class="result-head" style="display:none"></div>
+    <div class="selbar" id="selbar" style="display:none"></div>
     <div class="yearbar" id="yearbar"></div>
     <div id="list"></div>
     <div id="empty" class="empty" style="display:none"></div>
   </div>
 
-  <div id="paneHistory" style="display:none">
-    <div class="hist-bar">
-      <span>最近 <span class="cnt" id="histCount">0</span> 条检索记录 · 意外关闭页面也不怕，一键重搜</span>
-      <button class="hist-clear" onclick="clearHistory()"><svg class="ic" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>清空历史</button>
+  <!-- 检索历史已并入「检索」页的最近搜索胶囊；完整历史在此弹窗查看 -->
+  <div id="paneDiscover" style="display:none">
+    <div class="panel" style="margin-top:0">
+      <div class="db-sec">
+        <h4><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="5.5"/><line x1="16" y1="2.5" x2="16" y2="5.5"/><path d="M8.5 14.5 l2.5 2.5 4.5-4.5"/></svg>每日快照 <span class="sub">每天 00:00 定时扫描自动生成，记录当天新增与修改</span></h4>
+        <div class="snapbar">
+          <select id="snapDate" onchange="loadSnap()"></select>
+          <span style="font-size:12px;color:var(--sub)">选择日期查看当天新增与修改的文件</span>
+        </div>
+        <div class="snap-content" id="snapContent">选择日期查看当天新增与修改的文件…</div>
+      </div>
+      <div class="db-sec">
+        <h4><svg class="ic" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>疑似重复 TOP10 <span class="sub">同名同大小判定 · 未经哈希验证 · 建议打开确认内容后再清理</span></h4>
+        <div id="dbDups"></div>
+      </div>
+      <div class="db-sec" style="margin-bottom:0">
+        <h4><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8.5 7.5 L16 10.5 M9 16 L15.5 13.5"/></svg>找相似 <span class="sub">在检索结果卡片上点「找相似」：同目录邻居 + 全库文件名相似</span></h4>
+        <div class="db-empty" style="display:flex;align-items:center;gap:8px;justify-content:flex-start">
+          <span>去</span><span onclick="document.getElementById('kw').focus()" style="color:var(--pri);cursor:pointer;font-weight:600">搜索框</span>
+          <span>搜个关键词，然后在结果卡片上点「找相似」，会列出当年一起保存的邻居文件～</span>
+        </div>
+      </div>
     </div>
-    <div id="histList"></div>
   </div>
 
-  <div id="paneSnap" style="display:none">
-    <div class="snapbar">
-      <select id="snapDate" onchange="loadSnap()"></select>
-      <span style="font-size:12px;color:var(--sub)">每天 00:00 定时扫描自动生成，记录当天新增与修改的文件</span>
-    </div>
-    <div class="snap-content" id="snapContent">选择日期查看当天新增与修改的文件…</div>
-  </div>
-
-  <div id="paneStats" style="display:none">
+  <div id="paneLib" style="display:none">
     <div class="panel" style="margin-top:0">
       <div class="db-grid" id="dbCards"></div>
       <div class="db-sec">
@@ -1548,29 +1560,83 @@ footer code{background:#fff;border:1px solid var(--line);border-radius:4px;paddi
         <div class="tr-chart" id="dbTrend"></div>
       </div>
       <div class="db-sec" style="margin-bottom:0">
-        <h4><svg class="ic" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>重复文件 TOP10 <span class="sub">同名同大小副本 · 按占用空间排序（可在检索结果中直接回收）</span></h4>
-        <div id="dbDups"></div>
+        <h4><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><circle cx="12" cy="16" r=".5"/></svg>索引与检索边界 <span class="sub">为什么有的东西搜不到</span></h4>
+        <div class="bd-list">
+          <div class="bd-row"><b>PDF</b><span>仅提取前 40 页正文（保证索引速度，绝大多数文档核心内容在前 40 页）</span></div>
+          <div class="bd-row"><b>正文截断</b><span>文档类约前 1.2 万字符，代码/数据类约前 4 千字符（控制索引体积）</span></div>
+          <div class="bd-row"><b>大文件</b><span>超过 20MB 只记文件名不提正文</span></div>
+          <div class="bd-row"><b>图片/视频/压缩包</b><span>没有可提取的正文，只能按文件名搜索</span></div>
+          <div class="bd-row"><b>纯二进制与依赖</b><span>dll/exe/enc/字体等 52 类扩展名与 Anaconda/node_modules 等 38 类依赖目录默认不收录（可在 config.json 调整）</span></div>
+          <div class="bd-row"><b>刚保存的文件</b><span>需要一次增量扫描才会进入索引——搜不到时先点「增量更新索引」</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="paneSettings" style="display:none">
+    <div class="panel" style="margin-top:0">
+      <div class="db-sec">
+        <h4><svg class="ic" viewBox="0 0 24 24"><path d="M12 2 20 5.5V11c0 5-3.4 8.8-8 11-4.6-2.2-8-6-8-11V5.5Z"/><path d="M8.5 11.5 l2.5 2.5 4.5-4.5"/></svg>隐私与数据边界</h4>
+        <div class="bd-list">
+          <div class="bd-row"><b>本机运行</b><span>界面只监听 127.0.0.1，本机之外谁也访问不到；不上传任何文件与数据</span></div>
+          <div class="bd-row"><b>数据位置</b><span>索引、快照、配置全部保存在技能目录 scripts/data/ 下，删除该目录即彻底清除</span></div>
+          <div class="bd-row"><b>唯一联网项</b><span>天气装扮查询，需要你手动授权且可拒绝；拒绝后完全不发任何网络请求</span></div>
+          <div class="bd-row"><b>删除可还原</b><span>「移入回收站」送系统回收站随时可还原；宠物暂存到期也是转回收站，不直接删除</span></div>
+        </div>
+      </div>
+      <div class="db-sec">
+        <h4><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.6"/><circle cx="18" cy="20" r="1.6"/><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L22 7H6"/></svg>个性化 <span class="sub">陪伴小宠物 · 当前积分 <b id="setPoints" style="color:var(--pri)">0</b></span></h4>
+        <div class="set-actions">
+          <button class="set-btn" onclick="openSignin()">📅 每日签到领积分</button>
+          <button class="set-btn" onclick="openShop()">🐾 宠物商店买粮</button>
+          <button class="set-btn" onclick="weatherAgain()">🌤 重新授权天气装扮</button>
+        </div>
+        <div class="bd-list" style="margin-top:10px">
+          <div class="bd-row"><b>宠物玩法</b><span>右下角小家伙可以点它互动、喂食表演；搜索结果卡片可以拖给它暂存（24 小时内双击肚子吐回原位，到期自动转入回收站）</span></div>
+        </div>
+      </div>
+      <div class="db-sec">
+        <h4><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14.5v6M14.5 17.5h6"/></svg>外部工具与反馈</h4>
+        <div class="set-actions">
+          <button class="set-btn fg-btn" onclick="openFileGuard()">🛡 打开文件卫士（新标签页）</button>
+          <button class="set-btn" onclick="openFeedback()">💬 意见反馈</button>
+        </div>
+        <div class="bd-list" style="margin-top:10px">
+          <div class="bd-row"><b>文件卫士</b><span>独立技能：病毒伪装 / 广告捆绑 / 破损文件检测与修复，隔离送回收站可还原；以独立窗口打开，不与检索混用</span></div>
+          <div class="bd-row"><b>意见反馈</b><span>保存在本机 feedback.json，凌晨智能体自检时读取并针对性优化界面</span></div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ===== 左下角拓展模块入口（原意见反馈位置） ===== -->
-<div class="corner-entry ext-entry" id="extEntry" onclick="openExt()" title="拓展功能：宠物商店 · 意见反馈 · 文件卫士">
-  <div class="ce-ic">
-    <svg class="cei" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14.5v6M14.5 17.5h6"/></svg>
-    <span class="ce-badge" id="fbBadge">0</span>
+<!-- ===== 检索历史弹窗（并入检索页胶囊 · 全部历史在此查看） ===== -->
+<div class="pm-mask" id="histMask">
+  <div class="pm" style="max-width:680px">
+    <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f6da8" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      检索历史</h3>
+    <div class="psub">最近 <b id="histCount">0</b> 条 · 意外关闭页面也不怕，一键重搜（最多保留 50 条）</div>
+    <div class="hist-scroll" id="histList"></div>
+    <div class="fb-btns" style="margin-top:14px">
+      <button class="fb-cancel" onclick="clearHistory()">清空历史</button>
+      <button class="fb-send" onclick="closeHist()">关闭</button>
+    </div>
   </div>
-  <span class="ce-cap">拓展模块</span>
 </div>
 
-<!-- ===== 左下角签到入口（最上方） ===== -->
-<div class="corner-entry sign-entry" id="signEntry" onclick="openSignin()" title="每日签到领积分 · 宠物商店">
-  <div class="ce-ic">
-    <svg class="cei" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="5.5"/><line x1="16" y1="2.5" x2="16" y2="5.5"/><path d="M8.5 14.5 l2.5 2.5 4.5-4.5"/></svg>
-    <span class="ce-badge pts" id="signBadge">0</span>
+<!-- ===== 移入回收站确认弹窗（影响摘要 · 可还原） ===== -->
+<div class="pm-mask" id="recycleMask">
+  <div class="pm" style="max-width:520px">
+    <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c96a2e" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      移入回收站确认</h3>
+    <div class="psub" id="recycleSummary"></div>
+    <div class="rc-list" id="recycleList"></div>
+    <div class="rc-note">移入的是 <b>Windows 系统回收站</b>，随时可还原，不必担心误删。</div>
+    <div class="fb-btns" style="margin-top:16px">
+      <button class="fb-cancel" onclick="closeRecycleConfirm()">取消</button>
+      <button class="fb-send" onclick="doRecycleConfirm()">确认移入</button>
+    </div>
   </div>
-  <span class="ce-cap">每日签到</span>
 </div>
 
 <!-- ===== 反馈弹窗 ===== -->
@@ -1652,42 +1718,7 @@ footer code{background:#fff;border:1px solid var(--line);border-radius:4px;paddi
   </div>
 </div>
 
-<!-- ===== 拓展模块面板 ===== -->
-<div class="pm-mask" id="extMask">
-  <div class="pm">
-    <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f6da8" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14.5v6M14.5 17.5h6"/></svg>
-      拓展模块</h3>
-    <div class="psub">这里集中放置扩展功能，后续新功能也会陆续加入～</div>
-    <div class="ext-grid">
-      <div class="ext-card" onclick="openShopFromExt()">
-        <div class="xi xi-orange"><svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.6"/><circle cx="18" cy="20" r="1.6"/><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L22 7H6"/></svg></div>
-        <div class="xt"><b>宠物商店 <span class="own-tag">签到/买粮/喂食</span></b><span>每日签到领积分，给宠物买粮食，看它的吃播表演</span></div>
-      </div>
-      <div class="ext-card" onclick="openFeedbackFromExt()">
-        <div class="xi xi-blue"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="15.5" r=".6"/></svg></div>
-        <div class="xt"><b>意见反馈</b><span>哪里不顺手、想要什么功能，写下来智能体会优化</span></div>
-      </div>
-      <div class="ext-card" onclick="openFileGuard()">
-        <div class="xi xi-green"><svg viewBox="0 0 24 24"><path d="M12 2 20 5.5V11c0 5-3.4 8.8-8 11-4.6-2.2-8-6-8-11V5.5Z"/><path d="M8.5 11.5 l2.5 2.5 4.5-4.5"/></svg></div>
-        <div class="xt"><b>文件卫士 <span class="own-tag">界面内直用</span></b><span>病毒伪装/广告捆绑/破损文件检测与修复，一键扫描</span></div>
-      </div>
-    </div>
-    <button class="pm-sub-btn" onclick="closeExt()">关闭</button>
-  </div>
-</div>
-
-<!-- ===== 文件卫士内嵌窗口（拓展模块 · 界面内直用） ===== -->
-<div class="fg-mask" id="fgMask">
-  <div class="fg-win">
-    <div class="fg-top">
-      <svg viewBox="0 0 24 24"><path d="M12 2 20 5.5V11c0 5-3.4 8.8-8 11-4.6-2.2-8-6-8-11V5.5Z"/><path d="M8.5 11.5 l2.5 2.5 4.5-4.5"/></svg>
-      <b>文件卫士</b><span class="fg-sub" id="fgStatus">本地运行 · 数据不出本机</span>
-      <button class="fg-close" onclick="closeFileGuard()">✕ 关闭</button>
-    </div>
-    <iframe class="fg-frame" id="fgFrame" src="about:blank" onload="this.dataset.loaded='1'"></iframe>
-    <div class="fg-tip">文件卫士是独立技能，在此窗口内直接使用；隔离=送系统回收站可还原，修复=另存新文件不动原件</div>
-  </div>
-</div>
+<!-- ===== 文件卫士已改为「设置 → 外部工具」独立窗口打开（评审建议：不内嵌 iframe） ===== -->
 
 <!-- ===== 左下角回收站（连接系统回收站） ===== -->
 <div class="recycle-zone" id="recycleZone" title="拖入重复文件送入系统回收站 · 双击打开回收站">
@@ -1708,7 +1739,7 @@ footer code{background:#fff;border:1px solid var(--line);border-radius:4px;paddi
 <footer>
   引擎：TeleAgent 技能「文档拾忆」（本地 SQLite 索引 · 纯标准库 · 内置 pypdf） ·
   本界面仅监听 127.0.0.1，数据不出本机 · 命令行可用 <code>python searcher.py "关键词"</code> ·
-  TeleAgent 对话直接说"帮我找讲 xx 的文件" · 宠物吃掉的文件 24 小时内可双击肚子恢复
+  TeleAgent 对话直接说"帮我找讲 xx 的文件" · 勾选结果可移入回收站（可还原）
 </footer>
 
 <!-- ===== 宠物区 ===== -->
@@ -1716,7 +1747,7 @@ footer code{background:#fff;border:1px solid var(--line);border-radius:4px;paddi
   <div class="belly-panel" id="bellyPanel">
     <div class="bp-title"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><circle cx="12" cy="16" r=".5"/></svg>
       宠物的肚子 <span class="cnt" id="bpCount">0</span>/99</div>
-    <div class="bp-sub">吃进去的文件暂存中，倒计时结束彻底删除；双击宠物肚子可全部吐出恢复原位</div>
+    <div class="bp-sub">吃进去的文件暂存中；<b>双击宠物肚子</b>可全部吐出恢复原位。到期自动转入系统回收站（仍可还原）</div>
     <div class="bp-list" id="bpList"></div>
     <button class="bp-btn" onclick="spitAll()">全部吐出</button>
   </div>
@@ -1946,7 +1977,7 @@ var L={
   lastSearch:['上次你在找「{kw}」，去「检索历史」能一键重搜哦～','想继续上次的「{kw}」？检索历史里点一下就行！'],
   spitEmpty:'肚子里空空的，还没吃过东西呢～',
   spitDone:'都吐出来啦！文件已经回到原来的位置～',
-  idle:['我一直在这帮你守着文件哦～','忘了文件名没关系，记得内容就行！','每天凌晨 00:00 我都会自动做一次快照～','吃掉的文件 24 小时内都可以拍拍我肚子拿回来','关掉页面也不怕，检索历史帮你记着呢～','有什么想找的，尽管搜！'],
+  idle:['我一直在这帮你守着文件哦～','忘了文件名没关系，记得内容就行！','每天凌晨 00:00 我都会自动做一次快照～','吃掉的文件 24 小时内可以拍拍我肚子拿回，到期也只是进回收站','关掉页面也不怕，检索历史帮你记着呢～','有什么想找的，尽管搜！'],
   tap:['汪！我在呢～','有我在，文件跑不掉～','要不要摸摸头？','汪汪！快去搜点什么吧～']
 };
 function pick(a){return a[Math.floor(Math.random()*a.length)];}
@@ -2104,6 +2135,7 @@ function doSearch(){
     else{setPet('sad');}
     setTimeout(petBackToIdle,5600);
     loadHistory(false);
+    loadRecentKws();
   }).catch(function(e){clearTimeout(thinkingTimer);
     document.querySelector('.searchbox button').classList.remove('searching');
     showModal('请求失败',String(e));
@@ -2112,11 +2144,20 @@ function doSearch(){
 
 function renderResults(rs){
   window__results=rs;
+  selSet={};updateSelbar();
   var list=document.getElementById('list'), empty=document.getElementById('empty');
   if(!rs.length){list.innerHTML='';empty.style.display='';
-    empty.innerHTML='<div class="meteoric"><svg viewBox="0 0 64 64"><defs><linearGradient id="gem" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e8f4fd"/><stop offset="100%" stop-color="#a8c9e6"/></linearGradient></defs><g class="tr"><path d="M10 40 L40 10" stroke="url(#gem)" stroke-width="4" stroke-linecap="round" fill="none"/></g><circle cx="44" cy="14" r="4.5" fill="url(#gem)"/><circle cx="24" cy="46" r="1.6" fill="#a8c9e6"/><circle cx="52" cy="34" r="1.2" fill="#a8c9e6"/><circle cx="14" cy="24" r="1" fill="#c6dcee"/></svg></div>没有找到相关文件<br>换更短的关键词 / 放宽过滤条件，或点右上角「增量更新索引」后重试';
+    empty.innerHTML='<div class="meteoric"><svg viewBox="0 0 64 64"><defs><linearGradient id="gem" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e8f4fd"/><stop offset="100%" stop-color="#a8c9e6"/></linearGradient></defs><g class="tr"><path d="M10 40 L40 10" stroke="url(#gem)" stroke-width="4" stroke-linecap="round" fill="none"/></g><circle cx="44" cy="14" r="4.5" fill="url(#gem)"/><circle cx="24" cy="46" r="1.6" fill="#a8c9e6"/><circle cx="52" cy="34" r="1.2" fill="#a8c9e6"/><circle cx="14" cy="24" r="1" fill="#c6dcee"/></svg></div>'+
+      '<div class="e-title">没有找到相关文件</div>'+
+      '<div class="e-tips">'+
+      '<div class="e-tip"><b>刚保存的文件还没进索引？</b> 点 <a href="javascript:void(0)" onclick="startScan()">立即增量扫描</a>（后台运行，完成后自动提示，再搜一次就能找到）</div>'+
+      '<div class="e-tip"><b>找的是图片 / 视频 / 压缩包？</b> 这类文件没有可提取的正文，只能按<b>文件名</b>搜索——换成文件名里的词试试</div>'+
+      '<div class="e-tip"><b>纯二进制与依赖不收录</b> dll / exe / 安装包 / 字体，以及 Anaconda、node_modules 等依赖目录默认不进索引</div>'+
+      '<div class="e-tip"><b>关键词太具体？</b> 换更短或更宽泛的词、点「任一命中」、清空多余的筛选条件（类型/时间/路径）</div>'+
+      '</div>'+
+      '<div class="e-more"><a href="javascript:void(0)" onclick="setTab(\'settings\')">查看检索能力边界说明 →</a></div>';
     return;}
-  empty.style.display='';
+  empty.style.display='none';
   list.innerHTML=rs.map(function(r,i){
     var sn=(r.snippets||[]).map(function(s){return '<div class="snip">'+hi(s)+'</div>';}).join('');
     var dup='';
@@ -2129,10 +2170,11 @@ function renderResults(rs){
           '<button class="act" onclick="recycleOne(this)" data-p="'+encodeURIComponent(d.path)+'" data-n="'+esc(r.name)+'"><svg class="ic" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>回收</button></div>';
       }).join('');
       dup='<div class="dupbox"><div class="dup-head"><svg class="ic" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'+
-        '发现 <b>'+r.dup_count+'</b> 个重复副本（同名同大小）<span class="tip">副本可拖到左下角回收站</span></div>'+items+'</div>';
+        '发现 <b>'+r.dup_count+'</b> 个重复副本（同名同大小 · 未经哈希验证）<span class="tip">建议先打开确认内容再回收</span></div>'+items+'</div>';
     }
     return '<div class="result" id="rc-'+i+'" data-t="'+esc(r.ext||'')+'" draggable="true" ondragstart="dragStart(event,'+i+')">'+
-    '<div class="rtop"><span class="rank">'+(i+1)+'</span>'+
+    '<div class="rtop"><label class="ck"><input type="checkbox" id="ck-'+i+'" onclick="toggleSel('+i+',event)" title="勾选后可批量移入回收站"></label>'+
+    '<span class="rank">'+(i+1)+'</span>'+
     '<span class="fname">'+esc(r.name)+'</span>'+
     (r.dup_count?'<span class="dup-badge">重复 ×'+r.dup_count+'</span>':'')+
     '<span class="tag">'+esc((r.ext||'').replace('.','').toUpperCase())+'</span>'+
@@ -2147,6 +2189,76 @@ function renderResults(rs){
     '<button class="act ai" onclick="aiSummarize(this,\''+encodeURIComponent(r.path)+'\')"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/><path d="M19 15l.9 2.6L22.5 18l-2.6.9L19 21.5l-.9-2.6L15.5 18l2.6-.9z"/></svg>AI 总结</button>'+
     '<button class="act" onclick="copyP(\''+encodeURIComponent(r.path)+'\',this)"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制路径</button></div>'+sn+dup+'</div>';
   }).join('');
+}
+
+/* ---------- 勾选删除（评审主流程）：勾选 → 影响摘要 → 确认 → 移入回收站（可还原） ---------- */
+var selSet={};
+function toggleSel(i,ev){
+  ev.stopPropagation();
+  var r=window__results[i];if(!r)return;
+  if(selSet[r.path])delete selSet[r.path];else selSet[r.path]={name:r.name,size:r.size};
+  var card=document.getElementById('rc-'+i);
+  if(card)card.classList.toggle('sel-on',!!selSet[r.path]);
+  updateSelbar();
+}
+function selAll(){
+  var rs=window__results||[];
+  var keys=Object.keys(selSet);
+  if(keys.length>=rs.length){selSet={};}
+  else{rs.forEach(function(r){selSet[r.path]={name:r.name,size:r.size};});}
+  rs.forEach(function(r,i){
+    var c=document.getElementById('ck-'+i);if(c)c.checked=!!selSet[r.path];
+    var card=document.getElementById('rc-'+i);if(card)card.classList.toggle('sel-on',!!selSet[r.path]);
+  });
+  updateSelbar();
+}
+function updateSelbar(){
+  var bar=document.getElementById('selbar');
+  var keys=Object.keys(selSet);
+  var rs=window__results||[];
+  if(!keys.length||!rs.length){bar.style.display='none';return;}
+  var total=0;keys.forEach(function(k){total+=(selSet[k].size||0);});
+  bar.style.display='flex';
+  bar.innerHTML='<label class="sb-all"><input type="checkbox" '+(keys.length>=rs.length?'checked':'')+' onchange="selAll()"> 全选</label>'+
+    '<span class="sb-info">已选 <b>'+keys.length+'</b> / '+rs.length+' 个 · 共约 '+fmtSize(total)+'</span>'+
+    '<span class="sb-tip">送系统回收站，随时可还原</span>'+
+    '<button class="sb-go" onclick="confirmRecycle()">移入回收站</button>';
+}
+var recyclePending=[];
+function confirmRecycle(){
+  var keys=Object.keys(selSet);
+  if(!keys.length)return;
+  var total=0;keys.forEach(function(k){total+=(selSet[k].size||0);});
+  document.getElementById('recycleSummary').innerHTML='将把选中的 <b>'+keys.length+'</b> 个文件移入系统回收站（约 '+fmtSize(total)+'）：';
+  var names=keys.map(function(k){return '· '+esc(selSet[k].name);});
+  document.getElementById('recycleList').innerHTML=names.slice(0,8).join('<br>')+
+    (names.length>8?('<br>· …等共 '+names.length+' 个'):'');
+  recyclePending=keys.slice();
+  document.getElementById('recycleMask').classList.add('show');
+}
+function closeRecycleConfirm(){document.getElementById('recycleMask').classList.remove('show');}
+document.getElementById('recycleMask').addEventListener('click',function(ev){
+  if(ev.target===this)closeRecycleConfirm();});
+function doRecycleConfirm(){
+  var keys=recyclePending.slice();recyclePending=[];
+  document.getElementById('recycleMask').classList.remove('show');
+  if(!keys.length)return;
+  var done=0,ok=0,failed=[];
+  (function next(){
+    if(done>=keys.length){
+      selSet={};updateSelbar();
+      petSay(failed.length?('移入完成：'+ok+' 个成功，'+failed.length+' 个失败（可能被占用或已移动）～')
+        :('已把 '+ok+' 个文件移入回收站，随时可还原～'),5600);
+      doSearchQuiet();loadStatus();
+      return;}
+    var p=keys[done++];
+    fetch('/api/recycle',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({path:p})})
+      .then(function(r){return r.json()}).then(function(s){
+        if(s.ok)ok++;else failed.push(selSet[p]?selSet[p].name:p);
+        next();})
+      .catch(function(){failed.push(p);next();});
+  })();
 }
 
 /* ---------- 时间分布轴：点击年份过滤，再点取消 ---------- */
@@ -2221,14 +2333,11 @@ function fallbackCopy(txt){
   }catch(e){return false;}
 }
 
-/* ---------- 检索历史 ---------- */
+/* ---------- 检索历史（检索页胶囊 + 弹窗完整列表） ---------- */
 function loadHistory(autoplay){
   fetch('/api/history').then(function(r){return r.json()}).then(function(s){
     var items=s.items||[];
     document.getElementById('histCount').textContent=items.length;
-    var badge=document.getElementById('histBadge');
-    badge.style.display=items.length?('inline-block'):'none';
-    badge.textContent=items.length;
     var el=document.getElementById('histList');
     if(!items.length){
       el.innerHTML='<div class="hist-empty">还没有检索记录<br>搜索一次就会出现在这里（最多保留最近 50 条）</div>';
@@ -2257,6 +2366,31 @@ function loadHistory(autoplay){
   });
 }
 var window__history=[];
+function openHist(){loadHistory(false);document.getElementById('histMask').classList.add('show');}
+function closeHist(){document.getElementById('histMask').classList.remove('show');}
+document.getElementById('histMask').addEventListener('click',function(ev){
+  if(ev.target===this)closeHist();});
+/* 检索页顶部「最近搜索」胶囊：一键重搜 */
+var window__recent=[];
+function loadRecentKws(){
+  fetch('/api/history').then(function(r){return r.json()}).then(function(s){
+    var items=(s.items||[]).slice(0,6);
+    var bar=document.getElementById('recentbar');
+    if(!items.length){bar.style.display='none';return;}
+    window__recent=items;
+    bar.style.display='flex';
+    bar.innerHTML='<span class="rb-t">最近搜索</span>'+
+      items.map(function(it,i){
+        return '<span class="rb-chip" onclick="recentGo('+i+')" title="'+esc(it.kw.join(' '))+'">'+esc(it.kw.join(' '))+'</span>';
+      }).join('')+
+      '<span class="rb-all" onclick="openHist()">全部历史 →</span>';
+  });
+}
+function recentGo(i){
+  var it=window__recent[i];if(!it)return;
+  document.getElementById('kw').value=it.kw.join(' ');
+  doSearch();
+}
 function restoreSearch(i){
   var it=window__history[i];if(!it)return;
   document.getElementById('kw').value=it.kw.join(' ');
@@ -2317,56 +2451,42 @@ function sendFeedback(){
       petSay('收到你的反馈啦，我会记下来慢慢改进的～',5200);
     }).catch(function(e){showModal('请求失败',String(e));});
 }
-function updateFbBadge(){
-  fetch('/api/feedback/list').then(function(r){return r.json()}).then(function(s){
-    var pending=(s.items||[]).filter(function(it){return it.status==='pending';}).length;
-    var b=document.getElementById('fbBadge');
-    b.textContent=pending;b.classList.toggle('show',pending>0);
-    b.title=pending?('有 '+pending+' 条待处理反馈'):'拓展模块';
-  });
-}
+    function updateFbBadge(){
+      fetch('/api/feedback/list').then(function(r){return r.json()}).then(function(s){
+        var pending=(s.items||[]).filter(function(it){return it.status==='pending';}).length;
+        /* v1.2.0：反馈入口已并入设置页，无角标徽章可更新 */
+      });
+    }
 
-/* ---------- 每日签到 / 宠物商店 / 拓展模块 ---------- */
+/* ---------- 每日签到 / 宠物商店 ---------- */
 function openSignin(){loadSignin();document.getElementById('signinMask').classList.add('show');}
 function closeSignin(){document.getElementById('signinMask').classList.remove('show');}
 function openShop(){loadShop();document.getElementById('shopMask').classList.add('show');}
 function closeShop(){document.getElementById('shopMask').classList.remove('show');}
-function openExt(){document.getElementById('extMask').classList.add('show');}
-function closeExt(){document.getElementById('extMask').classList.remove('show');}
 function openShopFromSignin(){closeSignin();openShop();}
 function openSigninFromShop(){closeShop();openSignin();}
-function openShopFromExt(){closeExt();openShop();}
-function openFeedbackFromExt(){closeExt();openFeedback();}
+/* 设置页：重新授权天气装扮 */
+function weatherAgain(){
+  try{var c=localStorage.getItem('dm_wcity');if(c)document.getElementById('wCity').value=c;}catch(e){}
+  document.getElementById('wAuthMask').classList.add('show');
+}
+/* 文件卫士：独立技能，新标签页打开（评审建议：不内嵌 iframe，两个产品风险模型与任务节奏不同） */
 function openFileGuard(){
-  closeExt();
-  var mask=document.getElementById('fgMask'),fr=document.getElementById('fgFrame'),
-      st=document.getElementById('fgStatus');
-  fr.src='about:blank';delete fr.dataset.loaded;
-  mask.classList.add('show');
-  st.textContent='正在连接文件卫士…';
-  // no-cors 探测：服务在跑会 resolve（opaque 响应），没跑 connection refused 进 catch
   fetch('http://127.0.0.1:8766/',{mode:'no-cors'}).then(function(){
-    st.textContent='本地运行 · 数据不出本机';
-    fr.src='http://127.0.0.1:8766/';
+    window.open('http://127.0.0.1:8766/','_blank');
+    petSay('文件卫士已在新标签页打开，扫一扫更安心～',4200);
   }).catch(function(){
-    st.textContent='文件卫士未启动，正在后台拉起…';
+    petSay('文件卫士未启动，正在后台拉起…',4200);
     fetch('/api/ext/fileguard/launch',{method:'POST'})
       .then(function(r){return r.json()})
       .then(function(s){
-        if(!s.ok){closeFileGuard();
+        if(!s.ok){
           showModal('文件卫士','启动失败：'+(s.error||'未知错误')+'\n\n也可以手动双击桌面「文件卫士」图标使用。');return;}
-        var wait=s.already?200:3500;
-        st.textContent=s.already?'本地运行 · 数据不出本机':'已拉起，正在加载…';
-        setTimeout(function(){fr.src='http://127.0.0.1:8766/';},wait);
-      }).catch(function(){closeFileGuard();showModal('文件卫士','无法连接文件卫士服务，请手动双击桌面「文件卫士」图标使用。');});
+        setTimeout(function(){window.open('http://127.0.0.1:8766/','_blank');},s.already?200:3500);
+      }).catch(function(){showModal('文件卫士','无法连接文件卫士服务，请手动双击桌面「文件卫士」图标使用。');});
   });
-  petSay('文件卫士已在界面内打开，扫一扫更安心～',4200);
 }
-function closeFileGuard(){
-  document.getElementById('fgMask').classList.remove('show');
-  document.getElementById('fgFrame').src='about:blank';
-}
-['signinMask','shopMask','extMask'].forEach(function(id){
+['signinMask','shopMask'].forEach(function(id){
   document.getElementById(id).addEventListener('click',function(ev){
     if(ev.target===this)this.classList.remove('show');});
 });
@@ -2387,8 +2507,9 @@ function loadSignin(){
       return '<div class="wk'+(w.signed?' on':'')+(today?' today':'')+'" title="'+w.date+'">'+
         '<div class="d">'+w.day+'</div><div class="dot"></div></div>';
     }).join('');
-    var b=document.getElementById('signBadge');
-    b.textContent=s.points;b.classList.add('show');b.title='我的积分：'+s.points;
+    /* v1.2.0：签到角落入口已并入设置页，积分显示在设置页个性化卡片 */
+    var sp=document.getElementById('setPoints');
+    if(sp){sp.textContent=s.points;}
   });
 }
 function doSignin(){
@@ -2418,11 +2539,12 @@ function loadShop(){
         '<button class="fb-feed"'+(n?'':' disabled')+' onclick="feedFood(\''+f.id+'\')">喂食</button>'+
         '</div></div>';
     }).join('');
-    var b=document.getElementById('signBadge');
-    b.textContent=s.points;b.classList.add('show');
-  });
-}
-function buyFood(id,btn){
+        var b=document.getElementById('shPoints');
+        var sp=document.getElementById('setPoints');
+        if(sp)sp.textContent=s.points;
+      });
+    }
+    function buyFood(id,btn){
   btn.disabled=true;btn.textContent='…';
   fetch('/api/pet/buy',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({food:id})}).then(function(r){return r.json()}).then(function(o){
@@ -2839,19 +2961,16 @@ function pollScan(){
   });
 }
 
-/* ---------- 标签页 / 快照 / 数据库面板 ---------- */
+/* ---------- 标签页：检索（默认）/ 资料库 / 发现 / 设置 ---------- */
 function setTab(t){tab=t;
-  document.getElementById('tabSearch').className=(t==='search')?'on':'';
-  document.getElementById('tabHistory').className=(t==='history')?'on':'';
-  document.getElementById('tabSnap').className=(t==='snap')?'on':'';
-  document.getElementById('tabStats').className=(t==='stats')?'on':'';
-  document.getElementById('paneSearch').style.display=(t==='search')?'':'none';
-  document.getElementById('paneHistory').style.display=(t==='history')?'':'none';
-  document.getElementById('paneSnap').style.display=(t==='snap')?'':'none';
-  document.getElementById('paneStats').style.display=(t==='stats')?'':'none';
-  if(t==='snap'&&!document.getElementById('snapDate').options.length)loadSnapList();
-  if(t==='history')loadHistory(false);
-  if(t==='stats')loadStats();}
+  var tabs={'search':'tabSearch','lib':'tabLib','discover':'tabDiscover','settings':'tabSettings'};
+  var panes={'search':'paneSearch','lib':'paneLib','discover':'paneDiscover','settings':'paneSettings'};
+  for(var k in tabs){document.getElementById(tabs[k]).className=(t===k)?'on':'';}
+  for(var k2 in panes){document.getElementById(panes[k2]).style.display=(t===k2)?'':'none';}
+  if(t==='discover'&&!document.getElementById('snapDate').options.length)loadSnapList();
+  if(t==='discover'||t==='lib')loadStats();
+  if(t==='search')loadRecentKws();
+  if(t==='settings')loadSignin();}
 function loadSnapList(){
   fetch('/api/snapshots').then(function(r){return r.json()}).then(function(s){
     var sel=document.getElementById('snapDate');
@@ -2942,11 +3061,10 @@ window.addEventListener('keydown',function(e){if(e.key==='Escape'){hideModal();c
 setPet('welcome');
 setTimeout(petBackToIdle,5200);
 loadStatus();
-loadSnapList();
+loadRecentKws();
 loadHistory(true);
 updateBelly(false);
 updateFbBadge();
-loadSignin();
 /* 天气：每次进入界面询问一次授权，同意才联网查天气温度 */
 setTimeout(function(){
   try{var c=localStorage.getItem('dm_wcity');if(c)document.getElementById('wCity').value=c;}catch(e){}

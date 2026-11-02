@@ -3,7 +3,8 @@
 """
 文档拾忆 · 宠物肚子（安全删除暂存区）
 把文件"喂给"界面宠物 → 移入 belly 暂存目录（期间可随时吐出恢复原位），
-24 小时后由清扫逻辑彻底删除。所有操作与索引联动（吃掉即从索引移除，吐出即回索引）。
+24 小时后由清扫逻辑转入系统回收站（仍可还原，不直接删除）。
+所有操作与索引联动（吃掉即从索引移除，吐出即回索引）。
 """
 
 import json
@@ -23,7 +24,7 @@ from indexer import DB_PATH, DATA_DIR, extract_content, trunc_limit, init_db  # 
 
 BELLY_DIR = DATA_DIR / "belly"
 REGISTRY = BELLY_DIR / "registry.json"
-MAX_AGE = 86400        # 24 小时后彻底删除
+MAX_AGE = 86400        # 24 小时后转入系统回收站（可还原）
 BELLY_LIMIT = 99       # 肚子最多暂存 99 个文件
 
 _lock = threading.Lock()
@@ -184,24 +185,45 @@ def spit_all():
     return {"restored": restored, "failed": failed, "left": len(remain)}
 
 
+def _to_recycle_bin(path):
+    """把文件送入 Windows 系统回收站（ALLOWUNDO，可还原）。成功返回 True。"""
+    import ctypes
+
+    class SHFILEOPSTRUCTW(ctypes.Structure):
+        _fields_ = [("hwnd", ctypes.c_void_p), ("wFunc", ctypes.c_uint),
+                    ("pFrom", ctypes.c_wchar_p), ("pTo", ctypes.c_wchar_p),
+                    ("fFlags", ctypes.c_ushort), ("fAnyOperationsAborted", ctypes.c_int),
+                    ("hNameMappings", ctypes.c_void_p), ("lpszProgressTitle", ctypes.c_wchar_p)]
+
+    op = SHFILEOPSTRUCTW()
+    op.hwnd = None
+    op.wFunc = 3                    # FO_DELETE
+    op.pFrom = str(path) + "\x00"   # 双零结尾
+    op.pTo = None
+    op.fFlags = 0x40 | 0x10 | 0x4   # ALLOWUNDO | NOCONFIRMATION | SILENT
+    try:
+        return ctypes.windll.shell32.SHFileOperationW(ctypes.byref(op)) == 0
+    except OSError:
+        return False
+
+
 def purge_expired():
-    """彻底删除超过 24 小时的暂存文件（被占用的留到下轮再删）。"""
+    """超过 24 小时的暂存文件转入系统回收站（可还原；被占用的留到下轮）。"""
     with _lock:
         items = _load()
     now = time.time()
-    keep, purged = [], 0
+    keep, recycled = [], 0
     for it in items:
         if now - it["eaten_at"] > MAX_AGE:
-            try:
-                os.remove(it["belly"])
-                purged += 1
-            except OSError:
-                keep.append(it)  # 占用中，下轮再清
+            if _to_recycle_bin(it["belly"]):
+                recycled += 1
+            else:
+                keep.append(it)  # 占用中，下轮再处理
         else:
             keep.append(it)
     with _lock:
         _save(keep)
-    return purged
+    return recycled
 
 
 if __name__ == "__main__":
