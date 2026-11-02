@@ -38,12 +38,32 @@ python add_skill_remote.py <技能目录>\doc-memory\SKILL.md
 3. **删错了不怕**：把结果卡片拖到左下角宠物身上，文件会被"吃掉"暂存 24 小时，期间双击宠物肚子就能吐回原位；超过 24 小时才彻底删除（上限 99 个）。
 4. 其他功能：**检索历史**（防意外关闭丢关键词）、**找相似**（同目录邻居 + 全库文件名相似）、**中英文文件名筛选**、**年份分布轴**、每日签到 / 宠物商店 / 天气装扮、**数据库面板**（索引统计、重复文件榜）。
 
+## 索引保持精简（v1.1.0）
+
+自动忽略对"找回文档"没有价值的东西，索引又快又小（实测从 24.6 万条瘦身到 11.2 万条，体积缩小 63%）：
+
+- **依赖目录不收录**：Anaconda / pkgs / node_modules / .git / venv / site-packages 等 38 类
+- **纯二进制不收录**：dll / exe / enc / zip / 字体 / pyc 等 52 类
+
+想追加自己的忽略项，编辑 `scripts/data/config.json`：
+
+```json
+{
+  "roots": ["D:\\你的目录"],
+  "ignore_dirs": ["MyHugeSDK"],
+  "ignore_exts": ["psd", ".avi"]
+}
+```
+
+大小写不敏感，扩展名带不带点都行，下次扫描生效；`python indexer.py status` 可查看当前生效的忽略规则统计。
+
 ## 命令行
 
 在 `scripts\` 目录下执行：
 
 ```
 python indexer.py scan               # 建立/增量更新索引
+python indexer.py status             # 查看索引与忽略规则统计
 python searcher.py "关键词"           # 搜索
 python searcher.py "热失控 预警" --all # 多词 AND
 python searcher.py "报告" --type pdf --within 7d   # 限类型/时间
@@ -58,6 +78,7 @@ python selfcheck.py                  # 索引自检
 | docx / pptx / xlsx | 正文 |
 | pdf | 前 40 页正文 |
 | 图片 / 视频 / 压缩包 | 只按文件名（无法提取内容属正常） |
+| dll / exe / enc / 字体等纯二进制 | 不收录（可在 config.json 调整） |
 
 ## 隐私
 
