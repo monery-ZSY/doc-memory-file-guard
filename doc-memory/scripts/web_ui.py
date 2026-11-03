@@ -505,9 +505,45 @@ def api_ext_fileguard_launch():
     return {"ok": True, "already": False}
 
 
+def _list_desktop_shortcuts(desktop):
+    """枚举桌面全部 .lnk 的 名称|目标|参数（一次性 PowerShell，供去重与失效判断）。"""
+    script = (
+        "[Console]::OutputEncoding = [Text.Encoding]::UTF8; "
+        "$ws = New-Object -ComObject WScript.Shell; "
+        f"Get-ChildItem -LiteralPath '{desktop}' -Filter *.lnk -ErrorAction SilentlyContinue | "
+        "ForEach-Object { $s = $ws.CreateShortcut($_.FullName); "
+        "Write-Output ($_.BaseName + '|' + $s.TargetPath + '|' + $s.Arguments) }"
+    )
+    try:
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+            capture_output=True, timeout=20)
+        out = proc.stdout.decode("utf-8", "replace") if proc.stdout else ""
+        # PowerShell 控制台输出可能是 GBK
+        if not out.strip() and proc.returncode == 0:
+            out = ""
+        entries = []
+        for line in out.splitlines():
+            parts = line.split("|", 2)
+            if len(parts) == 3:
+                entries.append({"name": parts[0].strip(),
+                                "target": parts[1].strip(),
+                                "args": parts[2].strip()})
+        return entries
+    except Exception:
+        return []
+
+
 def api_create_shortcut(body):
     """在桌面创建「文档拾忆」快捷方式（pythonw 零窗口直启 + 流星透明图标）。
-    已存在同名快捷方式时跳过，不重复创建。"""
+
+    v1.2.1 三重防重复/防失效：
+    1. 目标级去重：桌面任意 .lnk（无论叫什么名字）只要已指向本 web_ui.py，
+       视为已存在，不再创建——用户手动建过「文档拾忆 DocMemory」等别名也不会重复。
+    2. 失效修复：同名「文档拾忆.lnk」若指向已不存在的旧路径（用户换目录解压），
+       自动重建指向当前位置，避免白色空图标。
+    3. 同名且指向另一份仍存在的副本：不劫持，返回 existed。
+    """
     import ctypes
 
     # 取桌面目录（CSIDL_DESKTOP=0）
@@ -518,15 +554,39 @@ def api_create_shortcut(body):
     except Exception:
         desktop = Path.home() / "Desktop"
     lnk_path = desktop / "文档拾忆.lnk"
+    cur_entry = str(SCRIPT_DIR / "web_ui.py").lower()
+
+    entries = _list_desktop_shortcuts(desktop)
+
+    # 1) 目标级去重：任何名字的快捷方式，只要指向本 web_ui.py 就算已存在
+    for e in entries:
+        combined = (e["target"] + " " + e["args"]).lower()
+        if cur_entry in combined:
+            return {"ok": True, "existed": True, "path": str(lnk_path),
+                    "name": e["name"] or "文档拾忆"}
+
+    # 2) 同名快捷方式存在 → 判断其指向是否失效
     if lnk_path.exists():
-        return {"ok": True, "existed": True, "path": str(lnk_path)}
+        mine = next((e for e in entries if e["name"] == "文档拾忆"), None)
+        if mine:
+            old_ref = (mine["args"].strip('"') or mine["target"]).strip()
+            # 指向另一份仍存在的副本（活路径）→ 不劫持
+            if Path(old_ref).exists() and cur_entry not in (mine["target"] + " " + mine["args"]).lower():
+                return {"ok": True, "existed": True, "path": str(lnk_path)}
+        # 指向已失效（旧目录被删/移动）→ 删除旧快捷方式后重建指向当前位置
+        try:
+            lnk_path.unlink()
+        except OSError:
+            pass
+
     # pythonw 路径：与当前解释器同目录
     exe_dir = Path(sys.executable).parent
     pythonw = exe_dir / "pythonw.exe"
     if not pythonw.exists():
         return {"error": "找不到 pythonw.exe，无法创建零窗口快捷方式"}
-    icon = SCRIPT_DIR / "meteor2.ico"
-    icon_arg = str(icon) if icon.exists() else ""
+    # 图标：优先新「文档+∞」图标，旧环境缺失时回退流星图标
+    icon = next((SCRIPT_DIR / n for n in ("doclogo.ico", "meteor2.ico") if (SCRIPT_DIR / n).exists()), None)
+    icon_arg = str(icon) if icon else ""
     # 用 PowerShell 创建 .lnk（无需额外依赖）
     script = (
         "$ws = New-Object -ComObject WScript.Shell; "
@@ -1590,6 +1650,7 @@ padding:8px 16px;cursor:pointer;font-weight:600}
           <button class="set-btn" onclick="openSignin()">📅 每日签到领积分</button>
           <button class="set-btn" onclick="openShop()">🐾 宠物商店买粮</button>
           <button class="set-btn" onclick="weatherAgain()">🌤 重新授权天气装扮</button>
+          <button class="set-btn" onclick="createShortcut(false)">🖥 创建桌面快捷方式</button>
         </div>
         <div class="bd-list" style="margin-top:10px">
           <div class="bd-row"><b>宠物玩法</b><span>右下角小家伙可以点它互动、喂食表演；搜索结果卡片可以拖给它暂存（24 小时内双击肚子吐回原位，到期自动转入回收站）</span></div>
@@ -1944,9 +2005,9 @@ padding:8px 16px;cursor:pointer;font-weight:600}
     </div>
     <div class="wask">是否授权现在开始全盘扫描识别？</div>
     <label class="wshort" for="wShortcut">
-      <input type="checkbox" id="wShortcut" checked>
-      <span class="wt"><b>同时在桌面创建「文档拾忆」快捷方式</b>
-      <span class="desc">流星图标·双击零窗口直达界面，之后无需再从文件夹里找</span></span>
+      <input type="checkbox" id="wShortcut">
+      <span class="wt"><b>在桌面创建「文档拾忆」快捷方式</b>（可选）
+      <span class="desc">透明底图标·双击零窗口直达界面。默认不创建，不动你的桌面；已有同名或手动建的图标也不会重复</span></span>
     </label>
     <div class="wbtns">
       <button class="wyes" onclick="firstUseScan(true)">授权并开始扫描</button>
@@ -2072,9 +2133,11 @@ function createShortcut(silent){
     .then(function(r){return r.json()}).then(function(s){
       if(!s.ok){if(!silent)showModal('创建失败',s.error||'未知错误');return;}
       if(silent){
-        petSay(s.existed?'桌面已经有「文档拾忆」快捷方式啦～':'桌面快捷方式已创建！流星图标双击直达～',5600);
+        petSay(s.existed?'桌面已经有直达这里的快捷方式啦（'+(s.name||'文档拾忆')+'），不再重复创建～':'桌面快捷方式已创建！透明底图标双击直达～',5600);
       }else{
-        showModal('桌面快捷方式',s.existed?'桌面上已经存在「文档拾忆」快捷方式啦。':'已在桌面创建「文档拾忆」快捷方式：\n'+s.path+'\n\n流星图标 · 双击零窗口直达界面。');
+        showModal('桌面快捷方式',s.existed
+          ?('桌面已有指向本程序的快捷方式（'+(s.name||'文档拾忆')+'），不再重复创建。\n\n也可在桌面右键它 → 重命名为你喜欢的名字。')
+          :('已在桌面创建「文档拾忆」快捷方式：\n'+s.path+'\n\n透明底图标 · 双击零窗口直达界面。'));
       }
     }).catch(function(e){if(!silent)showModal('请求失败',String(e));});
 }
@@ -3065,10 +3128,19 @@ loadRecentKws();
 loadHistory(true);
 updateBelly(false);
 updateFbBadge();
-/* 天气：每次进入界面询问一次授权，同意才联网查天气温度 */
-setTimeout(function(){
+/* 天气：每次进入界面询问一次授权，同意才联网查天气温度
+   首次使用的授权弹窗还没处理完时先等待其关闭，避免两层弹窗互相遮挡（按钮点不动） */
+function askWeatherAuth(){
   try{var c=localStorage.getItem('dm_wcity');if(c)document.getElementById('wCity').value=c;}catch(e){}
   document.getElementById('wAuthMask').classList.add('show');
+}
+setTimeout(function(){
+  var wm=document.getElementById('welcomeMask');
+  if(wm&&wm.classList.contains('show')){
+    var t=setInterval(function(){
+      if(!wm.classList.contains('show')){clearInterval(t);askWeatherAuth();}
+    },600);
+  }else{askWeatherAuth();}
 },2400);
 </script>
 </body>
