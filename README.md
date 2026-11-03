@@ -79,6 +79,7 @@ python scanner.py --json     # JSON 输出
 │       ├── pet_belly.py    # 宠物肚子（安全删除暂存/恢复）
 │       ├── pet_shop.py     # 签到/商店/天气
 │       ├── run_web_ui.bat  # 双击启动
+│       ├── doclogo.ico     # 桌面快捷方式图标（文档+∞ 透明底）
 │       ├── meteor2.ico
 │       └── vendor/pypdf/   # 内置 PDF 解析库
 └── file-guard/             # 文件卫士
