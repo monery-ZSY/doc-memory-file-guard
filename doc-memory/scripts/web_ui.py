@@ -175,20 +175,25 @@ def api_status():
     first_use = not DB_PATH.exists()
     if first_use:
         return {"indexed": False, "first_use": True}
-    conn = sqlite3.connect(str(DB_PATH))
-    init_db(conn)
-    total = conn.execute("SELECT COUNT(*) FROM files").fetchone()[0]
-    with_text = conn.execute("SELECT COUNT(*) FROM files WHERE status='text'").fetchone()[0]
-    last_scan = conn.execute("SELECT value FROM meta WHERE key='last_scan'").fetchone()
-    today_new = conn.execute("SELECT COUNT(*) FROM files WHERE first_seen=?",
-                             (date.today().isoformat(),)).fetchone()[0]
-    conn.close()
-    return {
-        "indexed": total > 0, "first_use": False, "total": total,
-        "with_text": with_text, "today_new": today_new,
-        "last_scan": last_scan[0] if last_scan else None,
-        "db_mb": round(DB_PATH.stat().st_size / 1048576, 1),
-    }
+    try:
+        conn = sqlite3.connect(str(DB_PATH), timeout=3)
+        init_db(conn)
+        total = conn.execute("SELECT COUNT(*) FROM files").fetchone()[0]
+        with_text = conn.execute("SELECT COUNT(*) FROM files WHERE status='text'").fetchone()[0]
+        last_scan = conn.execute("SELECT value FROM meta WHERE key='last_scan'").fetchone()
+        today_new = conn.execute("SELECT COUNT(*) FROM files WHERE first_seen=?",
+                                 (date.today().isoformat(),)).fetchone()[0]
+        conn.close()
+        return {
+            "indexed": total > 0, "first_use": False, "total": total,
+            "with_text": with_text, "today_new": today_new,
+            "last_scan": last_scan[0] if last_scan else None,
+            "db_mb": round(DB_PATH.stat().st_size / 1048576, 1),
+        }
+    except sqlite3.Error:
+        # 扫描写入高峰等锁超时：返回简化状态而不是 500，界面保持可用
+        return {"indexed": True, "first_use": False, "total": "…",
+                "busy": True}
 
 
 def api_search(qs):
@@ -244,7 +249,7 @@ def _attach_duplicates(out):
     if not names:
         return
     try:
-        conn = sqlite3.connect(str(DB_PATH))
+        conn = sqlite3.connect(str(DB_PATH), timeout=3)
         rows = conn.execute(
             f"SELECT name, size, path, mtime FROM files WHERE name IN ({','.join('?' * len(names))})",
             names).fetchall()
@@ -285,7 +290,7 @@ def api_similar(body):
     if not DB_PATH.exists():
         return {"error": "索引尚未建立"}
     try:
-        row = sqlite3.connect(str(DB_PATH)).execute(
+        row = sqlite3.connect(str(DB_PATH), timeout=3).execute(
             "SELECT name, ext, dir FROM files WHERE path=?", (p,)).fetchone()
     except sqlite3.Error:
         row = None
@@ -294,7 +299,7 @@ def api_similar(body):
     name, ext, dirpath = row
     stem = Path(name).stem
     base_bi = _name_bigrams(stem)
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(DB_PATH), timeout=3)
     items = []
     # 1) 同目录邻居（当年一起保存的文件最相关）
     try:
@@ -389,7 +394,7 @@ def api_stats():
     """数据库面板：类型分布/正文率/磁盘来源/录入趋势/重复文件TOP榜。"""
     if not DB_PATH.exists():
         return {"error": "索引尚未建立"}
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(DB_PATH), timeout=3)
     init_db(conn)
 
     total = conn.execute("SELECT COUNT(*) FROM files").fetchone()[0]
@@ -481,7 +486,7 @@ def api_recycle(body):
     if res != 0:
         return {"error": "移入回收站失败（代码 {}）".format(res)}
     try:
-        conn = sqlite3.connect(str(DB_PATH))
+        conn = sqlite3.connect(str(DB_PATH), timeout=3)
         conn.execute("DELETE FROM files WHERE path=?", (str(fp),))
         conn.commit()
         conn.close()
@@ -2135,10 +2140,14 @@ function loadStatus(){
     }
     document.getElementById('authBanner').classList.remove('show');
     document.getElementById('stTotal').textContent=s.total;
+    if(s.busy){  // 首次扫描写入高峰：数字暂不可读，下一轮轮询自会恢复
+      document.getElementById('stScan').textContent='扫描进行中，索引数字稍后刷新';
+      return;
+    }
     document.getElementById('stText').textContent=s.with_text;
     document.getElementById('stToday').textContent=s.today_new;
     document.getElementById('stScan').textContent=(s.last_scan||'-')+' · '+s.db_mb+'MB';
-  });
+  }).catch(function(){});
 }
 function firstUseScan(yes){
   document.getElementById('welcomeMask').classList.remove('show');

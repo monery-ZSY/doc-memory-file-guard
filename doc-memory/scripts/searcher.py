@@ -158,7 +158,7 @@ def run_search(keywords, require_all=False, type_=None, within=None, new=None,
     if not DB_PATH.exists():
         raise FileNotFoundError("索引尚未建立：请先运行 indexer.py scan")
 
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(DB_PATH), timeout=3)
     where, params = [], []
 
     like_parts = []

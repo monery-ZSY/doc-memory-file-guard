@@ -414,6 +414,12 @@ def extract_content(path, ext, max_bytes, allow_ocr=True):
 # ---------- 数据库 ----------
 
 def init_db(conn):
+    # WAL 模式：读写不互斥——首次/增量扫描写入期间，web 界面的查询不再被写锁卡死
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=3000")
+    except Exception:
+        pass
     conn.execute("""
         CREATE TABLE IF NOT EXISTS files (
             id INTEGER PRIMARY KEY,
