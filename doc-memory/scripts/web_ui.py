@@ -48,6 +48,17 @@ from indexer import DB_PATH, DATA_DIR, SNAPSHOT_DIR, init_db  # noqa: E402
 
 HISTORY_PATH = DATA_DIR / "history.json"
 HISTORY_MAX = 50
+WEATHER_CITY_PATH = DATA_DIR / "weather_city.txt"  # 天气默认城市（本机记住，避免 IP 定位漂移）
+
+
+def _load_weather_city():
+    """读取本机记住的默认城市（没填过返回空串）。"""
+    try:
+        if WEATHER_CITY_PATH.exists():
+            return WEATHER_CITY_PATH.read_text(encoding="utf-8").strip()[:30]
+    except Exception:
+        pass
+    return ""
 
 
 def _hist_key(rec):
@@ -213,6 +224,14 @@ def api_search(qs):
         return {"error": str(exc)}
     _attach_duplicates(out)
     _record_history(kws, qs, out.get("total_hits", 0))
+    # 无结果：多半是刚保存的文件还没进索引（每天凌晨才增量），自动补一次增量扫描
+    if not out.get("total_hits"):
+        try:
+            if not scan_status().get("running"):
+                start_scan()
+            out["scan_pending"] = True
+        except Exception:
+            pass
     return out
 
 
@@ -730,7 +749,12 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps(pet_shop.status(), ensure_ascii=False))
         elif u.path == "/api/pet/weather":
             city = (parse_qs(u.query).get("city", [""])[0] or "").strip()
+            if not city:  # 未填城市时优先用本机记住的默认城市，避免 IP 定位漂移
+                city = _load_weather_city()
             self._send(200, json.dumps(pet_shop.get_weather(city), ensure_ascii=False))
+        elif u.path == "/api/pet/weather/city":
+            self._send(200, json.dumps({"city": _load_weather_city()},
+                                       ensure_ascii=False))
         elif u.path == "/api/scan/status":
             self._send(200, json.dumps(scan_status(), ensure_ascii=False))
         else:
@@ -741,6 +765,18 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/scan":
             ok = start_scan()
             self._send(200, json.dumps({"started": ok}, ensure_ascii=False))
+        elif u.path == "/api/pet/weather/city":
+            body = self._body_json()
+            city = (body.get("city", "") or "").strip()[:30]
+            try:
+                if city:
+                    WEATHER_CITY_PATH.write_text(city, encoding="utf-8")
+                elif WEATHER_CITY_PATH.exists():
+                    WEATHER_CITY_PATH.unlink()
+                self._send(200, '{"ok":true}')
+            except Exception as exc:
+                self._send(200, json.dumps({"ok": False, "error": str(exc)},
+                                           ensure_ascii=False))
         elif u.path == "/api/pet/eat":
             body = self._body_json()
             self._send(200, json.dumps(pet_belly.eat(body.get("path", "")),
@@ -1553,7 +1589,8 @@ padding:8px 16px;cursor:pointer;font-weight:600}
       <span class="seg-label">排序</span>
       <div class="seg"><span id="sScore" class="on" onclick="setSort('score')">按匹配度</span><span id="sTime" onclick="setSort('time')">按时间</span></div>
       <select id="fType" onchange="filterChanged()"><option value="">全部类型</option><option>docx</option><option>pdf</option>
-        <option>pptx</option><option>xlsx</option><option>md</option><option>txt</option><option>py</option></select>
+        <option>pptx</option><option>xlsx</option><option>md</option><option>txt</option><option>py</option>
+        <option value="jpg,jpeg,png,gif,webp,bmp,tiff,ico">图片</option></select>
       <select id="fLang" onchange="filterChanged()" title="按文件名是否含中文筛选"><option value="">中英文文件名</option>
         <option value="zh">中文名</option><option value="en">英文名</option></select>
       <select id="fNew" onchange="filterChanged()"><option value="">不限收录时间</option><option value="today">今天收录</option>
@@ -1625,9 +1662,9 @@ padding:8px 16px;cursor:pointer;font-weight:600}
           <div class="bd-row"><b>PDF</b><span>仅提取前 40 页正文（保证索引速度，绝大多数文档核心内容在前 40 页）</span></div>
           <div class="bd-row"><b>正文截断</b><span>文档类约前 1.2 万字符，代码/数据类约前 4 千字符（控制索引体积）</span></div>
           <div class="bd-row"><b>大文件</b><span>超过 20MB 只记文件名不提正文</span></div>
-          <div class="bd-row"><b>图片/视频/压缩包</b><span>没有可提取的正文，只能按文件名搜索</span></div>
+          <div class="bd-row"><b>图片 OCR</b><span>新扫描的图片（jpg/png 等，8MB 以内）会用 Windows 自带引擎本地识别图中文字，可直接按内容搜；首次全量扫描不做 OCR（存量图太多），视频/压缩包仍只能按文件名搜</span></div>
           <div class="bd-row"><b>纯二进制与依赖</b><span>dll/exe/enc/字体等 52 类扩展名与 Anaconda/node_modules 等 38 类依赖目录默认不收录（可在 config.json 调整）</span></div>
-          <div class="bd-row"><b>刚保存的文件</b><span>需要一次增量扫描才会进入索引——搜不到时先点「增量更新索引」</span></div>
+          <div class="bd-row"><b>刚保存的文件</b><span>搜索没结果时会自动做一次增量扫描（后台），完成后会提醒你再搜一次；也可手动点「增量更新索引」</span></div>
         </div>
       </div>
     </div>
@@ -1738,7 +1775,7 @@ padding:8px 16px;cursor:pointer;font-weight:600}
     <div class="wauth-info">
       <div>· <b>建议填写你所在的城市</b>（如：郑州），按城市精确查询；
         留空则按 IP 自动定位——<b>开 VPN/代理时 IP 会漂移到境外，城市温度就不准了</b></div>
-      <div>· 城市只记住在<b>本浏览器</b>里，不上传；每次打开界面仍会询问授权</div>
+      <div>· 城市只保存在<b>本机</b>，不上传；填过之后每次打开都会自动带上，不再受 IP 漂移影响</div>
       <div>· 仅查询天气一项，不上传本机任何文件与数据；拒绝也不影响其他功能</div>
     </div>
     <input class="wcity-input" id="wCity" placeholder="你的城市（如：郑州）留空则自动定位" maxlength="30">
@@ -2192,10 +2229,11 @@ function doSearch(){
     rh.innerHTML='按「<b>'+esc(out.keywords.join(' '))+'</b>」（'+(out.mode==='all'?'全部命中':'任一命中')+
       ' · '+(out.sort==='time'?'按时间排序':'按匹配度排序')+
       (yearSel?(' · <b>'+yearSel+' 年</b>'):'')+'）找到 <b>'+out.total_hits+'</b> 个文件，显示前 '+out.returned+' 个：';
-    renderResults(out.results);
+    renderResults(out.results, out.scan_pending);
     renderYearbar(out.by_year||[]);
     if(out.total_hits>0){setPet('happy');petSay(pick(L.happy).replace('{n}',out.total_hits),5000);}
-    else{setPet('sad');}
+    else{setPet('sad');
+      if(out.scan_pending)petSay('没找到…可能是刚保存的文件还没进索引，我已经在后台增量扫描啦，完成后会提醒你，到时再搜一次就能找到！',8000);}
     setTimeout(petBackToIdle,5600);
     loadHistory(false);
     loadRecentKws();
@@ -2205,7 +2243,7 @@ function doSearch(){
     petEl.className='pet idle';});
 }
 
-function renderResults(rs){
+function renderResults(rs, scanPending){
   window__results=rs;
   selSet={};updateSelbar();
   var list=document.getElementById('list'), empty=document.getElementById('empty');
@@ -2213,7 +2251,10 @@ function renderResults(rs){
     empty.innerHTML='<div class="meteoric"><svg viewBox="0 0 64 64"><defs><linearGradient id="gem" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e8f4fd"/><stop offset="100%" stop-color="#a8c9e6"/></linearGradient></defs><g class="tr"><path d="M10 40 L40 10" stroke="url(#gem)" stroke-width="4" stroke-linecap="round" fill="none"/></g><circle cx="44" cy="14" r="4.5" fill="url(#gem)"/><circle cx="24" cy="46" r="1.6" fill="#a8c9e6"/><circle cx="52" cy="34" r="1.2" fill="#a8c9e6"/><circle cx="14" cy="24" r="1" fill="#c6dcee"/></svg></div>'+
       '<div class="e-title">没有找到相关文件</div>'+
       '<div class="e-tips">'+
-      '<div class="e-tip"><b>刚保存的文件还没进索引？</b> 点 <a href="javascript:void(0)" onclick="startScan()">立即增量扫描</a>（后台运行，完成后自动提示，再搜一次就能找到）</div>'+
+      (scanPending
+        ?'<div class="e-tip"><b>可能刚保存的文件还没进索引</b>——已自动开始增量扫描（后台运行，完成后自动提示），<b>稍后再搜一次就能找到</b></div>'
+        :'<div class="e-tip"><b>刚保存的文件还没进索引？</b> 点 <a href="javascript:void(0)" onclick="startScan()">立即增量扫描</a>（后台运行，完成后自动提示，再搜一次就能找到）</div>')+
+      '<div class="e-tip"><b>找的是图片？</b> 新扫描的图片会自动识别图中的文字，可直接按内容搜；老图片与视频/压缩包只能按<b>文件名</b>搜索（类型筛选可选「图片」）</div>'+
       '<div class="e-tip"><b>找的是图片 / 视频 / 压缩包？</b> 这类文件没有可提取的正文，只能按<b>文件名</b>搜索——换成文件名里的词试试</div>'+
       '<div class="e-tip"><b>纯二进制与依赖不收录</b> dll / exe / 安装包 / 字体，以及 Anaconda、node_modules 等依赖目录默认不进索引</div>'+
       '<div class="e-tip"><b>关键词太具体？</b> 换更短或更宽泛的词、点「任一命中」、清空多余的筛选条件（类型/时间/路径）</div>'+
@@ -2530,7 +2571,7 @@ function openShopFromSignin(){closeSignin();openShop();}
 function openSigninFromShop(){closeShop();openSignin();}
 /* 设置页：重新授权天气装扮 */
 function weatherAgain(){
-  try{var c=localStorage.getItem('dm_wcity');if(c)document.getElementById('wCity').value=c;}catch(e){}
+  fillWeatherCity();
   document.getElementById('wAuthMask').classList.add('show');
 }
 /* 文件卫士：独立技能，新标签页打开（评审建议：不内嵌 iframe，两个产品风险模型与任务节奏不同） */
@@ -2739,6 +2780,15 @@ function applyWeather(w){
   }
 }
 var weatherAllowed=false, weatherTimer=null;
+function fillWeatherCity(){
+  /* 预填：优先本浏览器记忆，没有则取本机记住的默认城市 */
+  var w=document.getElementById('wCity');if(!w)return;
+  var c='';try{c=localStorage.getItem('dm_wcity')||'';}catch(e){}
+  if(c){w.value=c;return;}
+  fetch('/api/pet/weather/city').then(function(r){return r.json()}).then(function(s){
+    if(s&&s.city&&!w.value)w.value=s.city;
+  }).catch(function(){});
+}
 function getWeatherCity(){
   var c=(document.getElementById('wCity').value||'').trim();
   try{localStorage.setItem('dm_wcity',c);}catch(e){}
@@ -2759,6 +2809,10 @@ function loadWeather(){
 function weatherAgree(){
   weatherAllowed=true;
   document.getElementById('wAuthMask').classList.remove('show');
+  var c=getWeatherCity();
+  /* 同意时把城市记到本机（换浏览器/重装界面也不丢），拒绝则不记 */
+  fetch('/api/pet/weather/city',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({city:c})}).catch(function(){});
   loadWeather();
 }
 function weatherDeny(){
@@ -3131,7 +3185,7 @@ updateFbBadge();
 /* 天气：每次进入界面询问一次授权，同意才联网查天气温度
    首次使用的授权弹窗还没处理完时先等待其关闭，避免两层弹窗互相遮挡（按钮点不动） */
 function askWeatherAuth(){
-  try{var c=localStorage.getItem('dm_wcity');if(c)document.getElementById('wCity').value=c;}catch(e){}
+  fillWeatherCity();
   document.getElementById('wAuthMask').classList.add('show');
 }
 setTimeout(function(){

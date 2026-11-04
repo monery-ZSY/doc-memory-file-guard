@@ -90,6 +90,11 @@ DOCX_EXTS = {".docx"}
 PPTX_EXTS = {".pptx"}
 XLSX_EXTS = {".xlsx"}
 PDF_EXTS = {".pdf"}
+# v1.3.0：图片走本地 OCR（Windows 自带引擎，识别结果作为可搜索正文）
+IMAGE_OCR_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".gif"}
+OCR_SCRIPT = SCRIPT_DIR / "ocr.ps1"
+OCR_TIMEOUT = 20        # 单张图片 OCR 限时（秒）
+OCR_MAX_BYTES = 8 * 1024 * 1024   # 超过 8MB 的图不 OCR（大图耗时过长）
 
 # 代码/数据/标记类：截断更短（CODE_MAX_CHARS），其余文档类用 DOC_MAX_CHARS
 CODE_TRUNC_EXTS = {
@@ -345,12 +350,53 @@ def extract_pdf(path, max_pages=40):
     return None
 
 
-def extract_content(path, ext, max_bytes):
+def _normalize_ocr_text(t):
+    """OCR 结果后处理：Windows OCR 会在字符间插空格（“热 失 控”“45 ． 6”），
+    去掉与中文/数字相邻的空格并把全角标点转半角，保证关键词可命中。"""
+    if not t:
+        return t
+    t = t.replace("\uff0e", ".").replace("\uff0c", ",").replace("\uff1a", ":")
+    t = re.sub(r"(?<=\d)\s+\.", ".", t)                          # "45 ." → "45."
+    t = re.sub(r"\.\s+(?=\d)", ".", t)                           # ". 6"  → ".6"
+    t = re.sub(r"(?<=[\u4e00-\u9fff\d])\s+(?=[\u4e00-\u9fff\d])", "", t)  # 中文/数字相邻空格
+    return t.strip()
+
+
+def extract_image_ocr(path):
+    """调用 Windows 自带 OCR 识别图片文字（本地识别，不出网）。
+    成功返回文本（可能为空串），失败/无引擎返回 None。"""
+    if not OCR_SCRIPT.exists():
+        return None
+    try:
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive",
+             "-ExecutionPolicy", "Bypass",
+             "-File", str(OCR_SCRIPT), "-ImagePath", str(path)],
+            capture_output=True, timeout=OCR_TIMEOUT)
+        if proc.returncode != 0:
+            return None
+        out = proc.stdout.decode("utf-8", "replace").strip()
+        return _normalize_ocr_text(out) if out else ""
+    except Exception:
+        return None
+
+
+def extract_content(path, ext, max_bytes, allow_ocr=True):
     """按类型提取正文。返回 (content, status)。"""
     try:
         if ext in TEXT_EXTS:
             t = read_text_file(path, max_bytes * 1024 * 1024)
             return (sanitize_text(t), "text") if t is not None else (None, "name-only")
+        if ext in IMAGE_OCR_EXTS and allow_ocr:
+            # 增量扫描时对新图片做本地 OCR；首次全量跳过（数万张存量图全 OCR 耗时过长）
+            try:
+                if Path(path).stat().st_size <= OCR_MAX_BYTES:
+                    t = extract_image_ocr(path)
+                    if t:
+                        return sanitize_text(t), "text"
+            except OSError:
+                pass
+            return None, "name-only"
         if ext in DOCX_EXTS:
             return sanitize_text(extract_docx(path)), "text"
         if ext in PPTX_EXTS:
@@ -530,7 +576,8 @@ def cmd_scan(args):
         content, status = (None, "name-only")
         if need_extract:
             ext = fp.suffix.lower()
-            content, status = extract_content(sp, ext, max_bytes)
+            content, status = extract_content(sp, ext, max_bytes,
+                                             allow_ocr=not first_scan)
             if content:
                 content = content[:trunc_limit(ext)]
             else:

@@ -195,7 +195,7 @@ def _weather_by_city(city):
         return None
     try:
         g = _get("https://geocoding-api.open-meteo.com/v1/search?name="
-                 + urllib.parse.quote(city) + "&count=1&language=zh", 6)
+                 + urllib.parse.quote(city) + "&count=1&language=zh", 10)
         res = (g.get("results") or [None])[0]
         if not res:
             return {"type": "unknown", "temp": "", "city": city, "label": "",
@@ -203,7 +203,7 @@ def _weather_by_city(city):
         lat, lon = res["latitude"], res["longitude"]
         w = _get("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
                  "&current=weather_code,wind_speed_10m,temperature_2m&timezone=auto"
-                 % (lat, lon), 6)
+                 % (lat, lon), 10)
         cur = w.get("current", {})
         code = int(cur.get("weather_code", 0))
         wind = cur.get("wind_speed_10m")
@@ -222,12 +222,12 @@ def _weather_by_city(city):
 def _weather_online():
     # IP 自动定位（出口走代理/VPN 时可能漂移到境外，仅供未填城市时兜底）
     try:
-        ip = _get("http://ip-api.com/json/?fields=status,lat,lon,city", 4)
+        ip = _get("http://ip-api.com/json/?fields=status,lat,lon,city", 8)
         if ip.get("status") != "success":
             return None
         w = _get("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
                  "&current=weather_code,wind_speed_10m,temperature_2m&timezone=auto"
-                 % (ip["lat"], ip["lon"]), 5)
+                 % (ip["lat"], ip["lon"]), 10)
         cur = w.get("current", {})
         code = int(cur.get("weather_code", 0))
         wind = cur.get("wind_speed_10m")
@@ -238,7 +238,7 @@ def _weather_online():
     except Exception:
         pass
     try:
-        j = _get("https://wttr.in/?format=j1", 6)
+        j = _get("https://wttr.in/?format=j1", 10)
         cur = j["current_condition"][0]
         code = int(cur.get("weatherCode", 0))
         wind = float(cur.get("windspeedKmph", 0) or 0)
@@ -254,16 +254,21 @@ def _weather_online():
 
 
 def get_weather(city=None, force=False):
-    """city 为空 → IP 自动定位；指定城市名（支持中文）→ 按城市精确查询。
-    各自独立缓存 30 分钟。"""
+    """city 为空 → 用调用方传入的默认城市；均无则 IP 自动定位。
+    成功结果缓存 30 分钟；失败结果只缓存 60 秒（网络恢复后快速自愈），
+    且整体重试一次再判定失败。"""
     key = (city or "").strip().lower() or "auto"
     now = time.time()
     cache = _weather_caches.get(key)
-    if not force and cache and cache["data"] and now - cache["ts"] < 1800:
+    ttl = 60 if (cache and cache["data"] and cache["data"].get("error")) else 1800
+    if not force and cache and cache["data"] and now - cache["ts"] < ttl:
         return cache["data"]
-    data = _weather_by_city(city) if (city or "").strip() else _weather_online()
+    has_city = bool((city or "").strip())
+    data = _weather_by_city(city) if has_city else _weather_online()
+    if data is None:  # 网络抖动常见：整体重试一次
+        data = _weather_by_city(city) if has_city else _weather_online()
     if data is None:
         data = {"type": "unknown", "temp": "", "city": (city or "").strip(),
-                "label": "", "error": "天气服务暂时连不上，稍后再试～"}
+                "label": "", "error": "天气服务暂时连不上（可能是网络/代理波动），稍后再试～"}
     _weather_caches[key] = {"ts": now, "data": data}
     return data
