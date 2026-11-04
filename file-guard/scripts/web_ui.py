@@ -267,6 +267,104 @@ def api_open_recyclebin():
     return {"ok": True}
 
 
+# ---------- 桌面快捷方式（v1.4.0：对齐文档拾忆的防重复/防失效体系） ----------
+
+def _list_desktop_shortcuts(desktop):
+    """枚举桌面全部 .lnk 的 名称|目标|参数（一次性 PowerShell，供去重与失效判断）。"""
+    script = (
+        "[Console]::OutputEncoding = [Text.Encoding]::UTF8; "
+        "$ws = New-Object -ComObject WScript.Shell; "
+        f"Get-ChildItem -LiteralPath '{desktop}' -Filter *.lnk -ErrorAction SilentlyContinue | "
+        "ForEach-Object { $s = $ws.CreateShortcut($_.FullName); "
+        "Write-Output ($_.BaseName + '|' + $s.TargetPath + '|' + $s.Arguments) }"
+    )
+    try:
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+            capture_output=True, timeout=20)
+        out = proc.stdout.decode("utf-8", "replace") if proc.stdout else ""
+        entries = []
+        for line in out.splitlines():
+            parts = line.split("|", 2)
+            if len(parts) == 3:
+                entries.append({"name": parts[0].strip(),
+                                "target": parts[1].strip(),
+                                "args": parts[2].strip()})
+        return entries
+    except Exception:
+        return []
+
+
+def api_create_shortcut(body):
+    """在桌面创建「文件卫士」快捷方式（pythonw 零窗口直启 + 盾牌透明图标）。
+
+    三重防重复/防失效（与文档拾忆 v1.2.1 同体系）：
+    1. 目标级去重：桌面任意 .lnk 只要已指向本 web_ui.py，视为已存在，
+       不再创建——手动建过「文件卫士 FileGuard」等别名也不会重复。
+    2. 失效修复：同名「文件卫士.lnk」指向已不存在的旧路径时自动重建。
+    3. 同名且指向另一份仍存在的副本：不劫持，返回 existed。
+    """
+    import ctypes
+
+    try:
+        buf = ctypes.create_unicode_buffer(260)
+        ctypes.windll.shell32.SHGetSpecialFolderPathW(None, buf, 0, False)
+        desktop = Path(buf.value)
+    except Exception:
+        desktop = Path.home() / "Desktop"
+    lnk_path = desktop / "文件卫士.lnk"
+    cur_entry = str(SCRIPT_DIR / "web_ui.py").lower()
+
+    entries = _list_desktop_shortcuts(desktop)
+
+    # 1) 目标级去重
+    for e in entries:
+        combined = (e["target"] + " " + e["args"]).lower()
+        if cur_entry in combined:
+            return {"ok": True, "existed": True, "path": str(lnk_path),
+                    "name": e["name"] or "文件卫士"}
+
+    # 2) 同名快捷方式 → 判断失效
+    if lnk_path.exists():
+        mine = next((e for e in entries if e["name"] == "文件卫士"), None)
+        if mine:
+            old_ref = (mine["args"].strip('"') or mine["target"]).strip()
+            if Path(old_ref).exists() and cur_entry not in (mine["target"] + " " + mine["args"]).lower():
+                return {"ok": True, "existed": True, "path": str(lnk_path)}
+        try:
+            lnk_path.unlink()
+        except OSError:
+            pass
+
+    exe_dir = Path(sys.executable).parent
+    pythonw = exe_dir / "pythonw.exe"
+    if not pythonw.exists():
+        return {"error": "找不到 pythonw.exe，无法创建零窗口快捷方式"}
+    # 图标：优先新盾牌图标，旧环境缺失时回退 shield.ico
+    icon = next((SCRIPT_DIR / n for n in ("guardlogo.ico", "shield.ico")
+                 if (SCRIPT_DIR / n).exists()), None)
+    icon_arg = str(icon) if icon else ""
+    script = (
+        "$ws = New-Object -ComObject WScript.Shell; "
+        f"$lnk = $ws.CreateShortcut('{lnk_path}'); "
+        f"$lnk.TargetPath = '{pythonw}'; "
+        f"$lnk.Arguments = '\"{SCRIPT_DIR / 'web_ui.py'}\" --port 8766 --no-browser'; "
+        f"$lnk.WorkingDirectory = '{SCRIPT_DIR}'; "
+        "$lnk.WindowStyle = 7; "
+        + (f"$lnk.IconLocation = '{icon_arg},0'; " if icon_arg else "")
+        + "$lnk.Save()"
+    )
+    try:
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+            capture_output=True, timeout=20)
+    except Exception as exc:
+        return {"error": "创建失败：" + str(exc)}
+    if proc.returncode != 0 or not lnk_path.exists():
+        return {"error": "创建失败：" + proc.stderr.decode("utf-8", "replace")[:200]}
+    return {"ok": True, "existed": False, "path": str(lnk_path)}
+
+
 def api_history():
     try:
         return {"items": json.loads((scanner.DATA_DIR / "scan_history.json").read_text(encoding="utf-8"))[:10]}
@@ -326,6 +424,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, api_open_folder(body))
         elif u.path == "/api/open_recyclebin":
             self._send(200, api_open_recyclebin())
+        elif u.path == "/api/shortcut":
+            self._send(200, api_create_shortcut(body))
         else:
             self._send(404, {"error": "not found"})
 
@@ -625,6 +725,19 @@ footer code{background:#e9eff6;border-radius:4px;padding:1px 6px;font-size:11px}
       </table>
     </div>
   </div>
+
+  <div class="history show" id="shortcutBox" style="display:block">
+    <div class="hcard">
+      <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2f6da8" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="10" height="10" rx="2"/><path d="M5 3v8a2 2 0 0 0 2 2h8"/></svg>桌面快捷方式</h3>
+      <p style="margin:6px 0 10px;color:#4a6b8f;font-size:12.5px;line-height:1.7">
+        双击零窗口直达界面（透明底盾牌图标）。已有指向本程序的任意名称快捷方式不会重复创建；
+        换目录解压后的失效旧图标会自动重建，不动你的桌面。
+      </p>
+      <button class="scanbtn" style="width:100%;max-width:320px" onclick="createShortcut(this)">
+        <div><b>创建/修复桌面快捷方式</b><small>已存在则提示，不重复</small></div>
+      </button>
+    </div>
+  </div>
 </main>
 
 <footer>
@@ -906,6 +1019,21 @@ function loadHistory(){
       '<td class="c-gry">'+(c.info||0)+'</td></tr>';
     }).join('');
   });
+}
+
+/* ---------- 桌面快捷方式 ---------- */
+function createShortcut(btn){
+  btn.disabled=true;
+  fetch('/api/shortcut',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({})}).then(function(r){return r.json()}).then(function(s){
+    btn.disabled=false;
+    if(!s.ok){setGuard('idle',s.error||'创建失败');return;}
+    if(s.existed){
+      setGuard('idle','桌面已经有直达这里的快捷方式啦'+(s.name?'（'+s.name+'）':'')+'，不再重复创建～');
+    }else{
+      setGuard('idle','桌面快捷方式已创建！盾牌图标双击直达～');
+    }
+  }).catch(function(e){btn.disabled=false;setGuard('idle','创建请求失败：'+e);});
 }
 
 /* ---------- 初始化 ---------- */
