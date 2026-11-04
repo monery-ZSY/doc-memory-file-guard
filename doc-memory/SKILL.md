@@ -62,7 +62,7 @@ create_source: super-agent-skill-creator
 - 首次使用：`python scripts/indexer.py scan`（自动探测扫描范围并写入配置，含用户文档/桌面/下载/微信QQ文件夹及非C盘本地磁盘）。
 - 找不到刚保存的文件：先 `scan` 增量更新再搜索（增量扫描只处理新增/修改文件，很快）。
 - 自定义范围：`scan --roots "D:\论文;C:\Users\me\Documents"`（会持久化到 config.json，之后的扫描沿用）。
-- 补扫某类型正文：`python scripts/indexer.py rescan-ext pdf`（只重新提取指定扩展名，不重走全盘；更换/新增提取器后用）。
+- 补扫某类型正文：`python scripts/indexer.py rescan-ext pdf`（只重新提取指定扩展名，不重走全盘；更换/新增提取器后用）。**存量图片补 OCR**：`python scripts/indexer.py rescan-ext jpg` 或 `jpg,png`（约 0.5 秒/张，2 万张存量图约 3~4 小时，可按扩展名分批；只补 8MB 以内图片）。
 - **忽略规则（v1.1.0）**：自动跳过对"找回文档"无价值的依赖与二进制——依赖目录（Anaconda/pkgs/node_modules/.git/venv/site-packages 等 38 类）与二进制扩展名（dll/exe/enc/zip/字体/pyc 等 52 类）不收录，索引体积可缩小一半以上且扫描更快。用户可在 `scripts/data/config.json` 追加 `"ignore_dirs": ["MySDK"]`、`"ignore_exts": ["psd"]`（大小写不敏感，扩展名带不带点均可），下次 scan 生效；`indexer.py status` 会显示当前生效的忽略规则统计。重扫时被忽略文件的旧记录会自动清出索引。
 
 ### 4. 每日凌晨维护与自检（配合定时任务）
@@ -102,8 +102,9 @@ python web_ui.py [--port 8765] [--no-browser]   # 本地检索界面，自动打
 ## 能力边界与注意
 
 - 正文可提取：txt/md/代码/csv/json/html/tex 等；docx/pptx/xlsx（零依赖解析）；pdf（内置 pypdf，仅提取前 40 页以保证速度）。
-- **图片 OCR（v1.3.0）**：增量扫描遇到的新图片（jpg/png/bmp/tiff/webp/gif，8MB 内）自动调 Windows 自带引擎本地识别图中文字入索引，可直接按图片内容搜；纯图形无文字的图与首次全量的存量图仍按文件名索引。视频/压缩包只索引文件名。
+- **图片 OCR（v1.3.0）**：增量扫描遇到的新图片（jpg/png/bmp/tiff/webp/gif，8MB 内）自动调 Windows 自带引擎本地识别图中文字入索引，可直接按图片内容搜；纯图形无文字的图与首次全量的存量图仍按文件名索引（存量图可用 `rescan-ext jpg,png` 补扫，见上文）。视频/压缩包只索引文件名。OCR 语言跟随系统（中文系统识别中英文，英文系统仅识别英文，需系统已装对应 OCR 语言包）。
 - 搜索无结果时界面会自动触发一次后台增量扫描（刚保存的文件最常见），完成后提示再搜一次；天气城市同意授权后记住在本机 `data/weather_city.txt`，不再受代理 IP 漂移影响。
 - dll/exe/enc/字体等纯二进制与依赖目录（Anaconda 等）默认直接不收录（v1.1.0 起忽略，可在 config.json 调整）；视频/压缩包只索引文件名、路径与时间。
 - 正文截断：文档类前 1.2 万字符，代码/数据类前 4 千字符（控制索引体积；代码类对"找回文档"场景价值低）；超 20MB 的文件只记文件名（`--max-size-mb` 可调）。
 - 全库数据（索引、快照、配置）都在技能目录 `scripts/data/` 下；vendor 依赖在 `scripts/vendor/`，不联网、不上传、不改全局 Python 环境。
+- 索引库为 SQLite **WAL 模式**（v1.3.1 起默认）：扫描写入期间搜索/状态查询并发不阻塞（实测首扫期间查询 20~80ms）；库旁会出现 `index.db-wal`/`index.db-shm` 辅助文件属正常现象，勿删。
