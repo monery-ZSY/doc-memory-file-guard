@@ -1,6 +1,6 @@
 ---
 name: doc-memory
-description: "Local file content search skill (Document Memory): helps users find files whose name or location they forgot, by searching file CONTENT keywords instead of file names. Builds a local SQLite index of Documents/Desktop/Downloads/WeChat-QQ folders and fixed drives, supports incremental updates, relevance/time sorting, time/type/dir filters, one-click jump to file or its folder from the web UI, search history (auto-recorded, restorable with one click), first-use authorized full-scan onboarding, a built-in pet assistant (emotional feedback + pet-belly safe delete: drag files to pet to store up to 99 items for 24h, double-click belly to restore; expired items go to Windows Recycle Bin, never hard-deleted), daily file snapshot reports, PDF content extraction (bundled pypdf in scripts/vendor), and a standalone local web UI (web_ui.py) with 4-tab layout (检索/资料库/发现/设置) keeping search as the first priority, checkbox multi-select + impact-summary + recycle-bin confirm delete flow, no-result diagnostic hints. Trigger when: user says 找不到文件/忘了存哪/记得内容忘了文件名/帮我找文件/之前写过的文档/前一天保存的文件/每日快照/昨天存的文件/打开文档拾忆界面/搜索界面/检索历史, or asks to 建立文件索引/更新索引/扫描文件/删除文件/恢复删除; also when user describes file content vaguely and expects the file to be located on this computer."
+description: "Local file content search skill (Document Memory): find files by CONTENT keywords when name/location is forgotten. Local SQLite index over Documents/Desktop/Downloads/WeChat folders and fixed drives, incremental updates, relevance/time sort, type/time/dir filters, one-click open/locate from web UI, search history, first-use authorized scan, pet assistant (belly safe-delete: store up to 99 items 24h, expired items go to Recycle Bin, double-click belly to restore), daily snapshots, PDF extraction (bundled pypdf), standalone local web UI with 4-tab layout (search/library/discover/settings), checkbox+summary+recycle-bin delete flow, no-result diagnostics. Trigger: 找不到文件/忘了存哪/记得内容忘了文件名/帮我找文件/之前写过的文档/前一天保存的文件/每日快照/昨天存的文件/打开文档拾忆界面/检索历史, or 建立文件索引/更新索引/扫描文件/删除文件/恢复删除, or vague content descriptions expecting a local file."
 name_cn: 文档拾忆
 description_cn: "按内容找回文件：忘了文件名和位置时，用大概内容关键词搜出本机文件。网页界面检索优先（四分区：检索/资料库/发现/设置），支持勾选批量移入回收站（影响摘要+可还原）、无结果诊断提示、宠物肚子安全删除（到期转回收站不直接删），数据全程留在本机。"
 create_source: super-agent-skill-creator
@@ -13,7 +13,7 @@ create_source: super-agent-skill-creator
 1. **TeleAgent 对话**（主入口）：用户模糊描述内容，智能体拆词多轮检索
 2. **独立网页界面**：`python scripts/web_ui.py`（或双击 `run_web_ui.bat`）本地启动检索界面，浏览器直接搜
 
-网页界面亮点（v1.2.0 起四分区信息架构，检索为第一优先级）：**检索**（默认首页）——搜索框+筛选+结果+顶部最近搜索胶囊（点击一键重搜，全部历史弹窗可查，防意外关闭丢失）；**资料库**——统计卡/类型分布/录入趋势/**检索能力边界说明**（PDF前40页/截断长度/20MB/忽略规则，解释为什么有的东西搜不到）；**发现**——每日快照/疑似重复榜（同名同大小判定，明确标注未经哈希验证）/找相似；**设置**——隐私与数据边界/个性化（签到、商店、天气重授权）/意见反馈/文件卫士外部入口。结果**默认按匹配度排序**（可切时间）、**中英文文件名筛选**、**时间分布轴**、**找相似**、**AI 总结桥接**、一键打开文件/所在文件夹、**首次使用引导**（未建索引时授权确认）。**无结果诊断**：搜不到时给出四类原因（未扫描/图片视频只能按文件名/二进制不收录/关键词太窄）+一键增量扫描入口。**安全删除主流程**：勾选结果卡片 → 批量操作条显示已选数量与体积 → 确认弹窗列出影响摘要（文件清单+总大小）→ 移入 **Windows 系统回收站**（随时可还原）并自动移出索引。内置**界面宠物小助手**（进页面打招呼、搜索时思考、找到开心、没找到安慰、点击互动），以及**宠物式暂存**：把结果卡片拖到宠物身上即被吃掉（移入肚子暂存目录，上限 99 个，24 小时后自动**转入系统回收站**而非直接删除，后台每 10 分钟自动清扫），**双击宠物肚子**可把文件吐回原位（原位被占则存为「 (恢复-xxxx)」副本，吐出后自动回写索引）。桌面已创建「文档拾忆」快捷方式（指向 run_web_ui.bat，双击即启动界面并自动打开浏览器）。
+网页界面亮点（v1.2.0 起四分区信息架构，检索为第一优先级）：**检索**（默认首页）——搜索框+筛选+结果+顶部最近搜索胶囊（点击一键重搜，全部历史弹窗可查，防意外关闭丢失）；**资料库**——统计卡/类型分布/录入趋势/**检索能力边界说明**（PDF前40页/截断长度/20MB/忽略规则，解释为什么有的东西搜不到）；**发现**——每日快照/疑似重复榜（同名同大小判定，明确标注未经哈希验证）/找相似；**设置**——隐私与数据边界/个性化（签到、商店、天气重授权）/意见反馈/文件卫士外部入口。结果**默认按匹配度排序**（可切时间）、**中英文文件名筛选**、**时间分布轴**、**找相似**、**AI 总结桥接**、一键打开文件/所在文件夹、**首次使用引导**（未建索引时授权确认）。**无结果诊断**：搜不到时给出四类原因（未扫描/图片视频只能按文件名/二进制不收录/关键词太窄）+一键增量扫描入口。**安全删除主流程**：勾选结果卡片 → 批量操作条显示已选数量与体积 → 确认弹窗列出影响摘要（文件清单+总大小）→ 移入 **Windows 系统回收站**（随时可还原）并自动移出索引。内置**界面宠物小助手**（进页面打招呼、搜索时思考、找到开心、没找到安慰、点击互动），以及**宠物式暂存**：把结果卡片拖到宠物身上即被吃掉（移入肚子暂存目录，上限 99 个，24 小时后自动**转入系统回收站**而非直接删除，后台每 10 分钟自动清扫），**双击宠物肚子**可把文件吐回原位（原位被占则存为「 (恢复-xxxx)」副本，吐出后自动回写索引）。桌面快捷方式可在首次授权时勾选创建（**默认不勾选**，不动用户桌面；v1.2.1 起目标级去重：桌面任意名字的快捷方式只要已指向本程序就不再重复创建，换目录解压后的失效快捷方式会自动重建，设置页也有手动创建入口）。
 
 **宠物养成**（2026-10 新增，v1.2.0 起收进「设置」分区，不再在首屏角落实出）：**每日签到**（积分 10+连签加成，面板含本周日历/积分卡）与**宠物商店**（5 款粮食不同价位：小鱼干 10/营养猫粮 20/鸡肉冻干 30/丰盛罐头 50/豪华妙鲜包 100，买后可喂食，每款粮食吃完宠物有不同表情/动作/话语与粒子特效）；**睡觉机制**（长时间不操作先犯困打哈欠、再睡着冒 Zzz，点击界面唤醒继续工作）；**天气装扮**（**每次进入界面弹一次联网授权**，同意才联网：授权弹窗可**填写所在城市**（支持中英文，如“郑州”，Open-Meteo 地理编码+按坐标精确查询；城市记在浏览器 localStorage 不上传），留空则按 IP 自动定位——开 VPN/代理时 IP 会漂移导致城市温度不准，已明确提示用户填城市；晴天宠物左上角旋转小太阳、雨天头顶乌云+实时雨滴+撑伞+雨靴、大风天枫叶绕飞+同色系围脖、下雪天雪花飘落+羽绒服+耳包，顶部显示“城市 · 天气 温度”标签，拒绝则完全不发请求不装扮；查询按城市独立缓存 30 分钟、失败静默降级；设置页可重新授权）；**文件卫士外部入口**（设置页点击新标签页打开独立界面，服务未运行时自动后台拉起，不再 iframe 内嵌——两个产品风险模型与任务节奏不同）。
 
@@ -27,7 +27,7 @@ create_source: super-agent-skill-creator
 - `scripts/pet_belly.py` — 宠物肚子：吃掉的文件暂存（上限 99）/吐出恢复/24 小时到期转系统回收站（可还原）
 - `scripts/pet_shop.py` — 签到积分/宠物商店/喂食/天气查询（数据存 data/pet_points.json；天气仅获取当地气象，失败静默降级）
 - `scripts/selfcheck.py` — 每日自检：索引完整性/孤儿记录/日志错误/过期暂存自动修复 + 待处理反馈统计
-- `scripts/run_web_ui.bat` — 双击启动网页界面（桌面有同名快捷方式，pythonw 零窗口）
+- `scripts/run_web_ui.bat` — 双击启动网页界面（pythonw 零窗口；桌面快捷方式可选创建，见上文）
 
 ## 工作流
 
@@ -102,6 +102,8 @@ python web_ui.py [--port 8765] [--no-browser]   # 本地检索界面，自动打
 ## 能力边界与注意
 
 - 正文可提取：txt/md/代码/csv/json/html/tex 等；docx/pptx/xlsx（零依赖解析）；pdf（内置 pypdf，仅提取前 40 页以保证速度）。
-- 图片、视频、压缩包等只索引文件名、路径与时间，内容搜不到属正常；dll/exe/enc/字体等纯二进制与依赖目录（Anaconda 等）默认直接不收录（v1.1.0 起忽略，可在 config.json 调整）。
+- **图片 OCR（v1.3.0）**：增量扫描遇到的新图片（jpg/png/bmp/tiff/webp/gif，8MB 内）自动调 Windows 自带引擎本地识别图中文字入索引，可直接按图片内容搜；纯图形无文字的图与首次全量的存量图仍按文件名索引。视频/压缩包只索引文件名。
+- 搜索无结果时界面会自动触发一次后台增量扫描（刚保存的文件最常见），完成后提示再搜一次；天气城市同意授权后记住在本机 `data/weather_city.txt`，不再受代理 IP 漂移影响。
+- dll/exe/enc/字体等纯二进制与依赖目录（Anaconda 等）默认直接不收录（v1.1.0 起忽略，可在 config.json 调整）；视频/压缩包只索引文件名、路径与时间。
 - 正文截断：文档类前 1.2 万字符，代码/数据类前 4 千字符（控制索引体积；代码类对"找回文档"场景价值低）；超 20MB 的文件只记文件名（`--max-size-mb` 可调）。
 - 全库数据（索引、快照、配置）都在技能目录 `scripts/data/` 下；vendor 依赖在 `scripts/vendor/`，不联网、不上传、不改全局 Python 环境。
