@@ -80,6 +80,7 @@ python scanner.py --json     # JSON 输出
 │       ├── pet_shop.py     # 签到/商店/天气
 │       ├── run_web_ui.bat  # 双击启动
 │       ├── doclogo.ico     # 桌面快捷方式图标（文档+∞ 透明底）
+│       ├── ocr.ps1         # 图片文字识别（Windows 自带引擎，本地不出网）
 │       ├── meteor2.ico
 │       └── vendor/pypdf/   # 内置 PDF 解析库
 └── file-guard/             # 文件卫士
