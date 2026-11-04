@@ -87,10 +87,11 @@ python scanner.py --json     # JSON 输出
     ├── SKILL.md
     ├── README.md
     └── scripts/
-        ├── web_ui.py       # 网页界面
+        ├── web_ui.py       # 网页界面（v1.4.0 起含桌面快捷方式管理）
         ├── scanner.py      # 启发式扫描引擎
         ├── repair.py       # 破损文件修复
         ├── run_web_ui.bat
+        ├── guardlogo.ico   # 桌面快捷方式图标（盾牌 透明底）
         └── shield.ico
 ```
 
